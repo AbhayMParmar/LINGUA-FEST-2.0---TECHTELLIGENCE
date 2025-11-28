@@ -1,0 +1,2229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Scoreboard</title>
+    <link rel="icon" href="Logo.jpg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: #333;
+            min-height: 100vh;
+            padding-bottom: 40px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 clamp(10px, 2vw, 20px);
+        }
+
+        /* Navbar Styles - Updated Background Color */
+        .navbar {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.2);
+            padding: clamp(10px, 1.5vw, 12px) 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo img {
+            height: clamp(35px, 5vw, 50px);
+            margin-right: 10px;
+            transition: transform 0.4s ease, filter 0.4s ease;
+            border-radius: 50%;
+        }
+
+        .logo:hover img {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+        }
+
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo h1 {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            color: white;
+            line-height: 1.2;
+            transition: color 0.3s ease;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo:hover h1 {
+            color: #fdbb2d;
+        }
+
+        .logo p {
+            font-size: clamp(0.6rem, 1.3vw, 0.7rem);
+            color: white;
+            font-weight: 600;
+            transition: color 0.3s ease;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo:hover p {
+            color: #fdbb2d;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: clamp(12px, 2.5vw, 20px);
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: white;
+            font-weight: 600;
+            padding: clamp(10px, 1.5vw, 12px) clamp(15px, 2vw, 20px);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+            position: relative;
+            overflow: hidden;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            border: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            min-width: 120px;
+            text-align: center;
+        }
+
+        /* Admin Login Button - Blue Theme */
+        .nav-links a.admin-login {
+            background: linear-gradient(135deg, #1a2a6c, #3a5ccc);
+            box-shadow: 0 4px 15px rgba(26, 42, 108, 0.4);
+        }
+
+        .nav-links a.admin-login:hover {
+            background: linear-gradient(135deg, #2a3a8c, #4a6aec);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(26, 42, 108, 0.6);
+        }
+
+        /* Result Button - Red Theme */
+        .nav-links a.result-btn {
+            background: linear-gradient(135deg, #b21f1f, #d43f3f);
+            box-shadow: 0 4px 15px rgba(178, 31, 31, 0.4);
+        }
+
+        .nav-links a.result-btn:hover {
+            background: linear-gradient(135deg, #d43f3f, #f55f5f);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(178, 31, 31, 0.6);
+        }
+
+        /* Champion Trophy Button - Green Theme */
+        .nav-links a.champion-trophy-btn {
+            background: linear-gradient(135deg, #2e7d32, #4caf50);
+            box-shadow: 0 4px 15px rgba(46, 125, 50, 0.4);
+        }
+
+        .nav-links a.champion-trophy-btn:hover {
+            background: linear-gradient(135deg, #4caf50, #66bb6a);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(46, 125, 50, 0.6);
+        }
+
+        .nav-links a.active {
+            background-color: rgba(255, 255, 255, 0.25);
+            color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Rest of the CSS remains the same as your original file */
+        /* Header Styles - More Compact */
+        .header {
+            text-align: center;
+            padding: clamp(15px, 3vw, 25px) 0;
+            color: white;
+        }
+
+        .header-content {
+            background-color: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: clamp(15px, 3vw, 20px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 900px;
+            margin: 0 auto;
+            transition: all 0.4s ease;
+        }
+
+        .header-content:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .header h2 {
+            font-size: clamp(1.4rem, 3.5vw, 1.8rem);
+            margin-bottom: 8px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .header h2.main-title {
+            color: #fdbb2d;
+            font-size: clamp(1.6rem, 4vw, 2.2rem);
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .header-content:hover h2.main-title {
+            text-shadow: 0 0 10px rgba(253, 187, 45, 0.7);
+        }
+
+        .header h3 {
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
+            margin-top: 12px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+            font-weight: 600;
+            color: #fff;
+            background-color: rgba(26, 42, 108, 0.7);
+            display: inline-block;
+            padding: 6px 15px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .header-content:hover h3 {
+            background-color: rgba(26, 42, 108, 0.9);
+            transform: scale(1.05);
+        }
+
+        /* Main Content Area */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        /* Scoreboard Styles */
+        .scoreboard {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            padding: clamp(15px, 2.5vw, 20px);
+            flex: 1;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .scoreboard:hover {
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            transform: translateY(-3px);
+        }
+
+        .scoreboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .scoreboard-header h3 {
+            font-size: clamp(1.1rem, 2.8vw, 1.4rem);
+            color: #1a2a6c;
+        }
+
+        .score-filters {
+            display: flex;
+            gap: clamp(8px, 1.5vw, 12px);
+            flex-wrap: wrap;
+        }
+
+        .score-filters select,
+        .score-filters input {
+            padding: clamp(5px, 1.2vw, 6px) clamp(8px, 1.5vw, 10px);
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+            min-width: clamp(100px, 12vw, 130px);
+            transition: all 0.3s ease;
+        }
+
+        .score-filters select:focus,
+        .score-filters input:focus {
+            outline: none;
+            border-color: #1a2a6c;
+            box-shadow: 0 0 0 2px rgba(26, 42, 108, 0.2);
+        }
+
+        .score-filters select:hover,
+        .score-filters input:hover {
+            border-color: #b21f1f;
+        }
+
+        .score-table-container {
+            flex: 1;
+            overflow: auto;
+        }
+
+        .score-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            min-width: 600px;
+        }
+
+        .score-table th,
+        .score-table td {
+            padding: clamp(8px, 1.5vw, 12px);
+            text-align: left;
+            border-bottom: 1px solid #eee;
+            word-wrap: break-word;
+            font-size: clamp(0.75rem, 1.6vw, 0.85rem);
+            transition: all 0.2s ease;
+        }
+
+        .score-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #1a2a6c;
+            cursor: pointer;
+            position: sticky;
+            top: 0;
+            transition: all 0.3s ease;
+        }
+
+        .score-table th:hover {
+            background-color: #e9ecef;
+            color: #b21f1f;
+        }
+
+        .score-table tr {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .score-table tr:hover {
+            background-color: #f8f9fa;
+            transform: scale(1.005);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .score-table td:first-child {
+            font-weight: 600;
+            color: #1a2a6c;
+        }
+
+        .score-table td:nth-child(2) {
+            color: #6c757d;
+        }
+
+        .score-table td:nth-child(3) {
+            font-weight: 600;
+            color: #b21f1f;
+        }
+
+        .score-table td:nth-child(4) {
+            font-weight: 700;
+            color: #1a2a6c;
+        }
+
+        /* Score Type column for Round 4 */
+        .score-type {
+            font-weight: 600;
+            color: #1a2a6c;
+        }
+
+        /* Highlight for score updates */
+        .score-highlight {
+            animation: scorePulse 1.5s ease;
+            background-color: rgba(253, 187, 45, 0.2);
+        }
+
+        @keyframes scorePulse {
+            0% {
+                background-color: rgba(253, 187, 45, 0.8);
+            }
+
+            100% {
+                background-color: rgba(253, 187, 45, 0.2);
+            }
+        }
+
+        /* Competition List Styles */
+        .competition-list {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            padding: clamp(15px, 2.5vw, 20px);
+            margin-top: 0;
+            transition: all 0.3s ease;
+        }
+
+        .competition-list:hover {
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            transform: translateY(-3px);
+        }
+
+        .competition-list h3 {
+            font-size: clamp(1.1rem, 2.8vw, 1.4rem);
+            color: #1a2a6c;
+            margin-bottom: 12px;
+        }
+
+        .competition-list ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .competition-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+            color: #333;
+            transition: all 0.3s ease;
+            position: relative;
+            padding-left: 15px;
+        }
+
+        .competition-list li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 6px;
+            height: 6px;
+            background-color: #fdbb2d;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .competition-list li:hover {
+            background-color: #f8f9fa;
+            padding-left: 20px;
+            color: #1a2a6c;
+            font-weight: 600;
+        }
+
+        .competition-list li:hover::before {
+            background-color: #b21f1f;
+            width: 8px;
+            height: 8px;
+        }
+
+        .competition-list li:last-child {
+            border-bottom: none;
+        }
+
+        /* Details Modal */
+        .details-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .details-modal-content {
+            background-color: white;
+            border-radius: 10px;
+            width: clamp(300px, 80vw, 500px);
+            max-width: 90%;
+            padding: clamp(20px, 3vw, 30px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            position: relative;
+            transform: scale(0.9);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .details-modal.show .details-modal-content {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .close-details-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+            cursor: pointer;
+            color: #6c757d;
+            transition: all 0.3s ease;
+        }
+
+        .close-details-modal:hover {
+            color: #b21f1f;
+            transform: rotate(90deg) scale(1.1);
+        }
+
+        .details-modal-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .details-modal-header h3 {
+            color: #1a2a6c;
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #1a2a6c;
+        }
+
+        .detail-value {
+            color: #333;
+            text-align: right;
+        }
+
+        /* Admin Login Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 10px;
+            width: clamp(300px, 80vw, 400px);
+            max-width: 90%;
+            padding: clamp(20px, 3vw, 30px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            position: relative;
+            transform: scale(0.9);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal.show .modal-content {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+            cursor: pointer;
+            color: #6c757d;
+            transition: all 0.3s ease;
+        }
+
+        .close-modal:hover {
+            color: #b21f1f;
+            transform: rotate(90deg) scale(1.1);
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-header h3 {
+            color: #1a2a6c;
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+            font-size: clamp(0.8rem, 2vw, 0.9rem);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: clamp(10px, 1.5vw, 12px);
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: clamp(0.9rem, 2vw, 1rem);
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #1a2a6c;
+            box-shadow: 0 0 0 2px rgba(26, 42, 108, 0.2);
+        }
+
+        .form-group input:hover {
+            border-color: #b21f1f;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: clamp(10px, 1.5vw, 12px);
+            background-color: #1a2a6c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: clamp(0.9rem, 2vw, 1rem);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .login-btn:hover::before {
+            left: 100%;
+        }
+
+        .login-btn:hover {
+            background-color: #0d1b4d;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(26, 42, 108, 0.4);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Page-level messages - Bottom Right Slide Up */
+        .page-message {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1001;
+            width: clamp(300px, 80vw, 400px);
+            padding: 15px 20px;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+            font-size: clamp(0.8rem, 2vw, 0.9rem);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: transform 0.4s ease, opacity 0.4s ease;
+        }
+
+        .page-message.show {
+            display: block;
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .page-success-message {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .page-error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Overall Team Rankings - CENTERED */
+        .overall-rankings {
+            display: none;
+            margin-bottom: 20px;
+            padding: 10px 0;
+            width: 100%;
+        }
+
+        .overall-rankings.show {
+            display: block;
+            animation: slideIn 0.8s ease-out;
+        }
+
+        @keyframes slideIn {
+            0% {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .overall-rankings-container {
+            background: linear-gradient(135deg, #ffd700, #ffed4e, #ffd700);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: clamp(15px, 2.5vw, 20px);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border: 3px solid #ffc107;
+            width: 100%;
+            transition: all 0.4s ease;
+        }
+
+        .overall-rankings-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(135deg, #ffed4e, #ffd700, #ffed4e);
+        }
+
+        .overall-title {
+            font-size: clamp(1.2rem, 3vw, 1.6rem);
+            color: #1a2a6c;
+            margin-bottom: 15px;
+            font-weight: 700;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+            text-align: center;
+            transition: all 0.4s ease;
+            position: relative;
+            padding: 10px 20px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.3));
+            backdrop-filter: blur(5px);
+        }
+
+        .overall-rankings-container:hover .overall-title {
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+            color: #b21f1f;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.5));
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            transform: scale(1.05);
+        }
+
+        .elite-award-title {
+            font-size: clamp(1.1rem, 2.8vw, 1.4rem);
+            color: #1a2a6c;
+            margin-bottom: 20px;
+            font-weight: 700;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+            text-align: center;
+            transition: all 0.4s ease;
+            position: relative;
+            padding: 8px 15px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(178, 31, 31, 0.2), rgba(26, 42, 108, 0.2));
+            display: inline-block;
+        }
+
+        .overall-rankings-container:hover .elite-award-title {
+            text-shadow: 0 0 10px rgba(178, 31, 31, 0.7);
+            color: #b21f1f;
+            background: linear-gradient(135deg, rgba(178, 31, 31, 0.3), rgba(26, 42, 108, 0.3));
+            box-shadow: 0 0 15px rgba(178, 31, 31, 0.4);
+            transform: scale(1.03);
+        }
+
+        .overall-winners {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+            min-width: min-content;
+            flex-wrap: wrap;
+        }
+
+        .overall-winner-card {
+            background: linear-gradient(135deg, #ffffff, #f8f9fa);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+            min-width: 250px;
+            text-align: center;
+            flex: 1;
+            max-width: 300px;
+        }
+
+        .overall-winner-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .overall-winner-card.platinum {
+            border-color: #e5e4e2;
+            background: linear-gradient(135deg, #f8f8ff, #e6e6fa);
+        }
+
+        .overall-winner-card.gold {
+            border-color: #ffd700;
+            background: linear-gradient(135deg, #fff9e6, #fff0b3);
+        }
+
+        .overall-winner-card.silver {
+            border-color: #c0c0c0;
+            background: linear-gradient(135deg, #f5f5f5, #e6e6e6);
+        }
+
+        .overall-winner-card.elite {
+            border-color: #ffd700;
+            background: linear-gradient(135deg, #fffacd, #ffeb3b);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
+        }
+
+        .overall-winner-card .trophy-icon {
+            font-size: clamp(2rem, 5vw, 3rem);
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .overall-winner-card .team-name {
+            font-size: clamp(1.1rem, 2.8vw, 1.4rem);
+            color: #1a2a6c;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .overall-winner-card .school-name {
+            font-size: clamp(0.9rem, 2.2vw, 1rem);
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .overall-winner-card .competition-name {
+            font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+
+        .overall-winner-card .team-score {
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
+            color: #b21f1f;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+
+        .overall-winner-card .elite-trophy-winner {
+            font-size: clamp(0.9rem, 2.2vw, 1rem);
+            color: #1a2a6c;
+            font-weight: 700;
+            margin-top: 15px;
+            padding: 8px 15px;
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 193, 7, 0.2));
+            border-radius: 5px;
+            border: 1px solid rgba(255, 193, 7, 0.5);
+        }
+
+        /* Party Poppers Animation */
+        .party-poppers {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+            display: none;
+        }
+
+        .popper {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: popperAnimation 2s ease-out forwards;
+        }
+
+        @keyframes popperAnimation {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Round Navigation */
+        .round-navigation {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .round-btn {
+            padding: 10px 20px;
+            background-color: #1a2a6c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .round-btn:hover {
+            background-color: #0d1b4d;
+            transform: translateY(-2px);
+        }
+
+        .round-btn.active {
+            background-color: #fdbb2d;
+            color: #333;
+        }
+
+        /* Round 4 Selection Options */
+        .round4-selection {
+            display: none;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .round4-selection.show {
+            display: flex;
+        }
+
+        .round4-btn {
+            padding: 10px 20px;
+            background-color: #1a2a6c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .round4-btn:hover {
+            background-color: #0d1b4d;
+            transform: translateY(-2px);
+        }
+
+        .round4-btn.active {
+            background-color: #fdbb2d;
+            color: #333;
+        }
+
+        /* Champion Trophy Button */
+        .champion-trophy-btn {
+            padding: 10px 20px;
+            background-color: #ffd700;
+            color: #1a2a6c;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            margin-left: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .champion-trophy-btn:hover {
+            background-color: #ffed4e;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .champion-trophy-btn.active {
+            background-color: #ffc107;
+            color: #1a2a6c;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 1024px) {
+            .container {
+                max-width: 95%;
+            }
+
+            .score-table th,
+            .score-table td {
+                padding: clamp(7px, 1.3vw, 10px);
+                font-size: clamp(0.7rem, 1.5vw, 0.8rem);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .scoreboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .score-filters {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .score-filters select,
+            .score-filters input {
+                width: 100%;
+                min-width: unset;
+            }
+
+            .score-table {
+                font-size: clamp(0.7rem, 1.5vw, 0.8rem);
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
+            .score-table th,
+            .score-table td {
+                min-width: 90px;
+                padding: clamp(6px, 1.2vw, 8px);
+            }
+
+            .competition-list {
+                font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+            }
+
+            .page-message {
+                right: 10px;
+                bottom: 10px;
+                width: calc(100% - 20px);
+                max-width: 400px;
+            }
+
+            .overall-winners {
+                flex-direction: column;
+                gap: 15px;
+                align-items: center;
+            }
+
+            .overall-winner-card {
+                min-width: unset;
+                width: 100%;
+                max-width: 400px;
+            }
+
+            .round-navigation {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .round-btn {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .round4-selection {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .round4-btn {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .champion-trophy-btn {
+                margin-left: 0;
+                margin-top: 10px;
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: clamp(12px, 2.5vw, 18px) 0;
+            }
+
+            .header h2 {
+                font-size: clamp(1.2rem, 3vw, 1.5rem);
+            }
+
+            .header h2.main-title {
+                font-size: clamp(1.4rem, 3.5vw, 1.8rem);
+            }
+
+            .header h3 {
+                font-size: clamp(0.9rem, 2.2vw, 1.1rem);
+            }
+
+            .scoreboard-header h3,
+            .competition-list h3 {
+                font-size: clamp(1rem, 2.5vw, 1.2rem);
+            }
+
+            .modal-content {
+                padding: clamp(15px, 2vw, 20px);
+            }
+        }
+
+        @media (max-height: 700px) {
+            .header {
+                padding: clamp(10px, 2vw, 15px) 0;
+            }
+
+            .header-content {
+                padding: clamp(12px, 2.5vw, 15px);
+            }
+
+            .header h2.main-title {
+                margin-bottom: 8px;
+            }
+
+            .header h3 {
+                margin-top: 8px;
+                padding: 4px 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Party Poppers Container -->
+    <div class="party-poppers" id="partyPoppers"></div>
+
+    <!-- Page-level messages - Bottom Right -->
+    <div class="page-message page-success-message" id="pageSuccessMessage">
+        Login successful! Redirecting to admin dashboard...
+    </div>
+    <div class="page-message page-error-message" id="pageErrorMessage">
+        Invalid credentials. Please try again.
+    </div>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container nav-container">
+            <div class="logo">
+                <img src="Logo.jpg" alt="School Logo">
+                <div class="logo-text">
+                    <h1>M.U.S ENGLISH MEDIUM SCHOOL</h1>
+                    <p>PRE PRIMARY - PRIMARY - HIGH SCHOOL</p>
+                </div>
+            </div>
+            <div class="nav-links">
+                <a href="#" class="admin-login" id="adminLoginBtn">Admin Login</a>
+                <a href="#" class="result-btn active" id="resultBtn">Result</a>
+                <a href="#" class="champion-trophy-btn" id="championTrophyBtn">Champion Trophy</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="container">
+            <div class="header-content">
+                <h2 class="main-title">LINGUA FEST 2.0 - TECHTELLIGENCE</h2>
+                <h2>INTERSCHOOL COMPETITION</h2>
+                <h3>ACADEMIC YEAR 2025-2026</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Round Navigation -->
+        <div class="round-navigation" id="roundNavigation">
+            <button class="round-btn active" data-round="1">Round 1: Poetry Recitation</button>
+            <button class="round-btn" data-round="2">Round 2: Story Telling</button>
+            <button class="round-btn" data-round="3">Round 3: Elocution</button>
+            <button class="round-btn" data-round="4">Round 4: Debate</button>
+        </div>
+
+        <!-- Round 4 Selection Options -->
+        <div class="round4-selection" id="round4Selection">
+            <button class="round4-btn active" data-type="speaker">Best Speaker</button>
+            <button class="round4-btn" data-type="rebuttal">Best Rebuttal</button>
+        </div>
+
+        <!-- Overall Team Rankings - SINGLE CENTERED CONTAINER -->
+        <div class="overall-rankings" id="overallRankings">
+            <div class="overall-rankings-container">
+                <h2 class="overall-title" id="overallTitle">🏆 CHAMPION OF CHAMPIONS 🏆</h2>
+                <h3 class="elite-award-title" id="eliteAwardTitle" style="display: none;">Elite Award</h3>
+                <div class="overall-winners" id="overallWinners">
+                    <!-- Overall winners will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Scoreboard -->
+            <div class="scoreboard">
+                <div class="scoreboard-header">
+                    <h3>Competition Results</h3>
+                    <div class="score-filters">
+                        <select id="competitionFilter" onchange="updateStandardOptions(this.value)">
+                            <option value="all">All Competitions</option>
+                            <option value="SOUND AND SENSE-POETRY RECITATION">SOUND AND SENSE-POETRY RECITATION</option>
+                            <option value="SPEAK TO LEAD-STORY TELLING">SPEAK TO LEAD-STORY TELLING</option>
+                            <option value="HERE ME OUT!-ELOCUTION">HERE ME OUT!-ELOCUTION</option>
+                            <option value="POWER OF SPEECH-DEBATE">POWER OF SPEECH-DEBATE</option>
+                        </select>
+                        <select id="standardFilter">
+                            <option value="all">All Standards</option>
+                        </select>
+                        <input type="text" id="searchFilter" placeholder="Search by student...">
+                    </div>
+                </div>
+
+                <div class="score-table-container">
+                    <table class="score-table">
+                        <thead>
+                            <tr>
+                                <th>Team Name <i class="fas fa-sort"></i></th>
+                                <th>Competition <i class="fas fa-sort"></i></th>
+                                <th>Score <i class="fas fa-sort"></i></th>
+                                <th id="scoreTypeHeader" style="display:none;">Score Type <i class="fas fa-sort"></i></th>
+                                <th>Rank <i class="fas fa-sort"></i></th>
+                            </tr>
+                        </thead>
+                        <tbody id="scoreTableBody">
+                            <tr>
+                                <td colspan="5">Loading scores...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Competition List -->
+            <div class="competition-list">
+                <h3>Available Competitions</h3>
+                <ul id="competitionList">
+                    <li>SOUND AND SENSE-POETRY RECITATION (Std 1-2)</li>
+                    <li>SPEAK TO LEAD-STORY TELLING (Std 3-4)</li>
+                    <li>HERE ME OUT!-ELOCUTION (Std 5-6)</li>
+                    <li>POWER OF SPEECH-DEBATE (Std 7-8)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Modal -->
+    <div class="details-modal" id="detailsModal">
+        <div class="details-modal-content">
+            <span class="close-details-modal" id="closeDetailsModal">&times;</span>
+            <div class="details-modal-header">
+                <h3>Participant Details</h3>
+            </div>
+            <div class="details-grid" id="detailsGrid">
+                <!-- Details will be dynamically inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div class="modal" id="adminModal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeModal">&times;</span>
+            <div class="modal-header">
+                <h3>Admin Login</h3>
+            </div>
+            <form id="adminLoginForm">
+                <div class="form-group">
+                    <label for="adminEmail">Email Address</label>
+                    <input type="email" id="adminEmail" placeholder="admin@school.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="adminPassword">Password</label>
+                    <input type="password" id="adminPassword" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="login-btn">Login to Dashboard</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBYPhpdmQ91mGF2EHj4jIAPRURk66nQpuk",
+            authDomain: "school-registeration-form.firebaseapp.com",
+            projectId: "school-registeration-form",
+            storageBucket: "school-registeration-form.firebasestorage.app",
+            messagingSenderId: "986025873460",
+            appId: "1:986025873460:web:1cf7dba5636fb30e233a61",
+            measurementId: "G-N4V9RNQ6YZ"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // DOM Elements
+        const resultBtn = document.getElementById('resultBtn');
+        const adminLoginBtn = document.getElementById('adminLoginBtn');
+        const championTrophyBtn = document.getElementById('championTrophyBtn');
+        const adminModal = document.getElementById('adminModal');
+        const closeModal = document.getElementById('closeModal');
+        const adminLoginForm = document.getElementById('adminLoginForm');
+        const pageSuccessMessage = document.getElementById('pageSuccessMessage');
+        const pageErrorMessage = document.getElementById('pageErrorMessage');
+        const competitionFilter = document.getElementById('competitionFilter');
+        const standardFilter = document.getElementById('standardFilter');
+        const searchFilter = document.getElementById('searchFilter');
+        const scoreTableBody = document.getElementById('scoreTableBody');
+        const detailsModal = document.getElementById('detailsModal');
+        const closeDetailsModal = document.getElementById('closeDetailsModal');
+        const detailsGrid = document.getElementById('detailsGrid');
+        const overallRankings = document.getElementById('overallRankings');
+        const overallTitle = document.getElementById('overallTitle');
+        const eliteAwardTitle = document.getElementById('eliteAwardTitle');
+        const overallWinners = document.getElementById('overallWinners');
+        const partyPoppers = document.getElementById('partyPoppers');
+        const roundNavigation = document.getElementById('roundNavigation');
+        const round4Selection = document.getElementById('round4Selection');
+        const scoreTypeHeader = document.getElementById('scoreTypeHeader');
+
+        // Track admin login status
+        let isAdminLoggedIn = false;
+        let currentScoreData = [];
+        let currentRound = 1;
+        let currentRound4Type = 'speaker'; // Default to Best Speaker
+        let isChampionTrophyMode = false;
+
+        // Function to create party poppers animation
+        function createPartyPoppers() {
+            partyPoppers.style.display = 'block';
+            partyPoppers.innerHTML = '';
+            
+            const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#FFA500', '#800080'];
+            
+            for (let i = 0; i < 100; i++) {
+                const popper = document.createElement('div');
+                popper.className = 'popper';
+                
+                // Random position
+                const left = Math.random() * 100;
+                popper.style.left = `${left}%`;
+                
+                // Random color
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                popper.style.backgroundColor = color;
+                
+                // Random size
+                const size = Math.random() * 10 + 5;
+                popper.style.width = `${size}px`;
+                popper.style.height = `${size}px`;
+                
+                // Random animation duration
+                const duration = Math.random() * 1 + 1;
+                popper.style.animationDuration = `${duration}s`;
+                
+                // Random delay
+                const delay = Math.random() * 0.5;
+                popper.style.animationDelay = `${delay}s`;
+                
+                partyPoppers.appendChild(popper);
+            }
+            
+            // Hide poppers after animation completes
+            setTimeout(() => {
+                partyPoppers.style.display = 'none';
+            }, 2500);
+        }
+
+        // Update standard options based on competition
+        function updateStandardOptions(competition) {
+            const stdSelect = standardFilter;
+            stdSelect.innerHTML = '<option value="all">All Standards</option>';
+
+            if (competition === 'SOUND AND SENSE-POETRY RECITATION') {
+                stdSelect.innerHTML += '<option value="1">Std 1</option><option value="2">Std 2</option>';
+            } else if (competition === 'SPEAK TO LEAD-STORY TELLING') {
+                stdSelect.innerHTML += '<option value="3">Std 3</option><option value="4">Std 4</option>';
+            } else if (competition === 'HERE ME OUT!-ELOCUTION') {
+                stdSelect.innerHTML += '<option value="5">Std 5</option><option value="6">Std 6</option>';
+            } else if (competition === 'POWER OF SPEECH-DEBATE') {
+                stdSelect.innerHTML += '<option value="7">Std 7</option><option value="8">Std 8</option>';
+            }
+            updateTable();
+        }
+
+        // Function to determine award based on rank and competition
+        function getAward(rank, competition, type = null) {
+            // For Debate competition (Round 4)
+            if (competition === 'POWER OF SPEECH-DEBATE') {
+                if (type === 'speaker') {
+                    if (rank === 1) {
+                        return 'Best Speaker - Platinum';
+                    } else if (rank === 2) {
+                        return 'Best Speaker - Gold';
+                    } else {
+                        return 'Participation';
+                    }
+                } else if (type === 'rebuttal') {
+                    if (rank === 1) {
+                        return 'Best Rebuttal - Platinum';
+                    } else if (rank === 2) {
+                        return 'Best Rebuttal - Gold';
+                    } else {
+                        return 'Participation';
+                    }
+                } else {
+                    // Default behavior for Round 4 without specific type
+                    if (rank === 1) {
+                        return 'Best Speaker - Platinum';
+                    } else if (rank === 2) {
+                        return 'Best Speaker - Gold';
+                    } else if (rank === 3) {
+                        return 'Best Rebuttal - Platinum';
+                    } else if (rank === 4) {
+                        return 'Best Rebuttal - Gold';
+                    } else {
+                        return 'Participation';
+                    }
+                }
+            } 
+            // For other competitions (Rounds 1-3)
+            else {
+                switch (rank) {
+                    case 1:
+                        return 'Platinum Medal';
+                    case 2:
+                        return 'Gold Medal';
+                    case 3:
+                        return 'Silver Medal';
+                    default:
+                        return 'Participation';
+                }
+            }
+        }
+
+        // Function to get trophy class based on rank and competition
+        function getTrophyClass(rank, competition, type = null) {
+            if (competition === 'POWER OF SPEECH-DEBATE') {
+                if (type === 'speaker') {
+                    if (rank === 1) {
+                        return 'platinum-trophy';
+                    } else if (rank === 2) {
+                        return 'gold-trophy';
+                    } else {
+                        return '';
+                    }
+                } else if (type === 'rebuttal') {
+                    if (rank === 1) {
+                        return 'platinum-trophy';
+                    } else if (rank === 2) {
+                        return 'gold-trophy';
+                    } else {
+                        return '';
+                    }
+                } else {
+                    if (rank === 1 || rank === 3) {
+                        return 'platinum-trophy';
+                    } else if (rank === 2 || rank === 4) {
+                        return 'gold-trophy';
+                    } else {
+                        return '';
+                    }
+                }
+            } else {
+                switch (rank) {
+                    case 1:
+                        return 'platinum-trophy';
+                    case 2:
+                        return 'gold-trophy';
+                    case 3:
+                        return 'silver-trophy';
+                    default:
+                        return '';
+                }
+            }
+        }
+
+        // Function to get card class based on rank for overall display
+        function getCardClass(rank, competition, type = null) {
+            if (competition === 'POWER OF SPEECH-DEBATE') {
+                if (type === 'speaker') {
+                    if (rank === 1) {
+                        return 'platinum';
+                    } else if (rank === 2) {
+                        return 'gold';
+                    } else {
+                        return '';
+                    }
+                } else if (type === 'rebuttal') {
+                    if (rank === 1) {
+                        return 'platinum';
+                    } else if (rank === 2) {
+                        return 'gold';
+                    } else {
+                        return '';
+                    }
+                } else {
+                    if (rank === 1 || rank === 3) {
+                        return 'platinum';
+                    } else if (rank === 2 || rank === 4) {
+                        return 'gold';
+                    } else {
+                        return '';
+                    }
+                }
+            } else {
+                switch (rank) {
+                    case 1:
+                        return 'platinum';
+                    case 2:
+                        return 'gold';
+                    case 3:
+                        return 'silver';
+                    default:
+                        return '';
+                }
+            }
+        }
+
+        // Function to get trophy icon based on rank and competition
+        function getTrophyIcon(rank, competition, type = null) {
+            if (competition === 'POWER OF SPEECH-DEBATE') {
+                if (type === 'speaker') {
+                    if (rank === 1) {
+                        return '🏆'; // Platinum trophy
+                    } else if (rank === 2) {
+                        return '🥇'; // Gold medal
+                    } else {
+                        return '🎖️'; // General medal
+                    }
+                } else if (type === 'rebuttal') {
+                    if (rank === 1) {
+                        return '🏆'; // Platinum trophy
+                    } else if (rank === 2) {
+                        return '🥇'; // Gold medal
+                    } else {
+                        return '🎖️'; // General medal
+                    }
+                } else {
+                    if (rank === 1 || rank === 3) {
+                        return '🏆'; // Platinum trophy
+                    } else if (rank === 2 || rank === 4) {
+                        return '🥇'; // Gold medal
+                    } else {
+                        return '🎖️'; // General medal
+                    }
+                }
+            } else {
+                switch (rank) {
+                    case 1:
+                        return '🏆'; // Platinum trophy
+                    case 2:
+                        return '🥇'; // Gold medal
+                    case 3:
+                        return '🥈'; // Silver medal
+                    default:
+                        return '🎖️'; // General medal
+                }
+            }
+        }
+
+        // Function to get competition name for a round
+        function getCompetitionForRound(round) {
+            switch (round) {
+                case 1:
+                    return 'SOUND AND SENSE-POETRY RECITATION';
+                case 2:
+                    return 'SPEAK TO LEAD-STORY TELLING';
+                case 3:
+                    return 'HERE ME OUT!-ELOCUTION';
+                case 4:
+                    return 'POWER OF SPEECH-DEBATE';
+                default:
+                    return '';
+            }
+        }
+
+        // Function to display top 3 winners for the current round
+        function displayCurrentRoundTop3Winners(scoreData) {
+            const competition = getCompetitionForRound(currentRound);
+            
+            // Filter data for current round
+            const roundData = scoreData.filter(item => item.competition === competition);
+            
+            overallWinners.innerHTML = '';
+
+            // Hide Elite Award title for rounds
+            eliteAwardTitle.style.display = 'none';
+
+            // Sort participants by score
+            roundData.sort((a, b) => (b.score || 0) - (a.score || 0));
+            
+            // Get top 3 for current round
+            const top3Winners = roundData.slice(0, 3);
+
+            if (top3Winners.length === 0) {
+                overallWinners.innerHTML = '<div class="no-results">No results available for this round</div>';
+                return;
+            }
+
+            top3Winners.forEach((participant, index) => {
+                const rank = index + 1;
+                const trophyClass = getTrophyClass(rank, competition);
+                const cardClass = getCardClass(rank, competition);
+                const award = getAward(rank, competition);
+                const trophyIcon = getTrophyIcon(rank, competition);
+
+                const winnerCard = document.createElement('div');
+                winnerCard.className = `overall-winner-card ${cardClass}`;
+                winnerCard.innerHTML = `
+                    <div class="trophy-icon ${trophyClass}">
+                        ${trophyIcon}
+                    </div>
+                    <div class="team-name">${participant.teamName || 'N/A'}</div>
+                    <div class="participant-name">${participant.participantName || 'N/A'}</div>
+                    <div class="competition-name">${competition}</div>
+                    <div class="team-score">Score: ${participant.score || 'N/A'}</div>
+                    <div class="team-rank">${award}</div>
+                `;
+
+                // Add click event to show participant details
+                winnerCard.addEventListener('click', () => {
+                    showParticipantDetails(participant);
+                });
+
+                overallWinners.appendChild(winnerCard);
+            });
+        }
+
+        // Function to display Round 4 results
+        function displayRound4Results(scoreData, type) {
+            // Filter data for Round 4
+            const round4Data = scoreData.filter(item => 
+                item.competition === 'POWER OF SPEECH-DEBATE'
+            );
+            
+            overallWinners.innerHTML = '';
+
+            // Hide Elite Award title for Round 4
+            eliteAwardTitle.style.display = 'none';
+
+            // Sort by score
+            round4Data.sort((a, b) => (b.score || 0) - (a.score || 0));
+            
+            // Get top 4 for Round 4 (2 for Best Speaker, 2 for Best Rebuttal)
+            const topParticipants = round4Data.slice(0, 4);
+
+            if (topParticipants.length === 0) {
+                overallWinners.innerHTML = '<div class="no-results">No results available for Round 4</div>';
+                return;
+            }
+
+            // Display based on selected type
+            if (type === 'speaker') {
+                // Show Best Speaker results (first 2)
+                const speakerParticipants = topParticipants.slice(0, 2);
+                
+                speakerParticipants.forEach((participant, index) => {
+                    const rank = index + 1;
+                    const trophyClass = getTrophyClass(rank, 'POWER OF SPEECH-DEBATE', 'speaker');
+                    const cardClass = getCardClass(rank, 'POWER OF SPEECH-DEBATE', 'speaker');
+                    const award = getAward(rank, 'POWER OF SPEECH-DEBATE', 'speaker');
+                    const trophyIcon = getTrophyIcon(rank, 'POWER OF SPEECH-DEBATE', 'speaker');
+
+                    const winnerCard = document.createElement('div');
+                    winnerCard.className = `overall-winner-card ${cardClass}`;
+                    winnerCard.innerHTML = `
+                        <div class="trophy-icon ${trophyClass}">
+                            ${trophyIcon}
+                        </div>
+                        <div class="team-name">${participant.teamName || 'N/A'}</div>
+                        <div class="participant-name">${participant.participantName || 'N/A'}</div>
+                        <div class="competition-name">Best Speaker - POWER OF SPEECH-DEBATE</div>
+                        <div class="team-score">Score: ${participant.score || 'N/A'}</div>
+                        <div class="team-rank">${award}</div>
+                    `;
+
+                    // Add click event to show participant details
+                    winnerCard.addEventListener('click', () => {
+                        showParticipantDetails(participant);
+                    });
+
+                    overallWinners.appendChild(winnerCard);
+                });
+            } else if (type === 'rebuttal') {
+                // Show Best Rebuttal results (next 2)
+                const rebuttalParticipants = topParticipants.slice(2, 4);
+                
+                rebuttalParticipants.forEach((participant, index) => {
+                    const rank = index + 1;
+                    const trophyClass = getTrophyClass(rank, 'POWER OF SPEECH-DEBATE', 'rebuttal');
+                    const cardClass = getCardClass(rank, 'POWER OF SPEECH-DEBATE', 'rebuttal');
+                    const award = getAward(rank, 'POWER OF SPEECH-DEBATE', 'rebuttal');
+                    const trophyIcon = getTrophyIcon(rank, 'POWER OF SPEECH-DEBATE', 'rebuttal');
+
+                    const winnerCard = document.createElement('div');
+                    winnerCard.className = `overall-winner-card ${cardClass}`;
+                    winnerCard.innerHTML = `
+                        <div class="trophy-icon ${trophyClass}">
+                            ${trophyIcon}
+                        </div>
+                        <div class="team-name">${participant.teamName || 'N/A'}</div>
+                        <div class="participant-name">${participant.participantName || 'N/A'}</div>
+                        <div class="competition-name">Best Rebuttal - POWER OF SPEECH-DEBATE</div>
+                        <div class="team-score">Score: ${participant.score || 'N/A'}</div>
+                        <div class="team-rank">${award}</div>
+                    `;
+
+                    // Add click event to show participant details
+                    winnerCard.addEventListener('click', () => {
+                        showParticipantDetails(participant);
+                    });
+
+                    overallWinners.appendChild(winnerCard);
+                });
+            }
+        }
+
+        // Function to display overall champion team across all competitions
+        function displayOverallChampion(scoreData) {
+            // Group scores by team name
+            const teamScores = {};
+            
+            scoreData.forEach(item => {
+                const teamName = item.teamName || item.participantName;
+                if (!teamName) return;
+                
+                if (!teamScores[teamName]) {
+                    teamScores[teamName] = {
+                        teamName: teamName,
+                        totalScore: 0,
+                        competitions: [],
+                        participants: [],
+                        schools: []
+                    };
+                }
+                
+                teamScores[teamName].totalScore += parseFloat(item.score) || 0;
+                teamScores[teamName].competitions.push(item.competition);
+                
+                // Add participant if not already included
+                if (item.participantName && !teamScores[teamName].participants.includes(item.participantName)) {
+                    teamScores[teamName].participants.push(item.participantName);
+                }
+                
+                // Add school if not already included
+                if (item.schoolName && !teamScores[teamName].schools.includes(item.schoolName)) {
+                    teamScores[teamName].schools.push(item.schoolName);
+                }
+            });
+            
+            // Convert to array and sort by total score
+            const teamsArray = Object.values(teamScores);
+            teamsArray.sort((a, b) => b.totalScore - a.totalScore);
+            
+            overallWinners.innerHTML = '';
+            
+            // Show Elite Award title only for Champion Trophy
+            eliteAwardTitle.style.display = 'block';
+            
+            if (teamsArray.length === 0) {
+                overallWinners.innerHTML = '<div class="no-results">No team data available</div>';
+                return;
+            }
+            
+            // Display the champion team (top team)
+            const champion = teamsArray[0];
+            
+            const winnerCard = document.createElement('div');
+            winnerCard.className = 'overall-winner-card elite';
+            winnerCard.innerHTML = `
+                <div class="trophy-icon">
+                    🏆
+                </div>
+                <div class="team-name">${champion.teamName}</div>
+                <div class="school-name">${champion.schools.join(', ') || 'N/A'}</div>
+                <div class="team-score">Total Score: ${champion.totalScore.toFixed(2)}</div>
+                <div class="elite-trophy-winner">Elite Trophy Winner</div>
+            `;
+            
+            // Add click event to show team details
+            winnerCard.addEventListener('click', () => {
+                showTeamDetails(champion);
+            });
+            
+            overallWinners.appendChild(winnerCard);
+        }
+
+        // Function to show team details in modal
+        function showTeamDetails(team) {
+            detailsGrid.innerHTML = `
+                <div class="detail-row">
+                    <span class="detail-label">Team Name:</span>
+                    <span class="detail-value">${team.teamName}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">School:</span>
+                    <span class="detail-value">${team.schools.join(', ') || 'N/A'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Participants:</span>
+                    <span class="detail-value">${team.participants.join(', ') || 'N/A'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Total Score:</span>
+                    <span class="detail-value">${team.totalScore.toFixed(2)}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Competitions:</span>
+                    <span class="detail-value">${team.competitions.join(', ') || 'N/A'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Award:</span>
+                    <span class="detail-value">Elite Trophy Winner</span>
+                </div>
+            `;
+
+            detailsModal.style.display = 'flex';
+            detailsModal.classList.add('show');
+        }
+
+        // Function to show participant details in modal
+        function showParticipantDetails(participant) {
+            const teamName = participant.teamName || participant.participantName || 'N/A';
+            const standard = participant.participantStd ? 'Std ' + participant.participantStd : 'N/A';
+            const competition = participant.competition || 'N/A';
+            const score = participant.score || 'N/A';
+            const rank = participant.rank || 'N/A';
+            const school = participant.schoolName || 'N/A';
+            const participantName = participant.participantName || 'N/A';
+            const scoreType = participant.scoreType || 'N/A';
+            
+            // Determine award based on current context
+            let award;
+            if (currentRound === 4) {
+                award = getAward(rank, competition, currentRound4Type);
+            } else {
+                award = getAward(rank, competition);
+            }
+
+            detailsGrid.innerHTML = `
+                <div class="detail-row">
+                    <span class="detail-label">Team Name:</span>
+                    <span class="detail-value">${teamName}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Participant Name:</span>
+                    <span class="detail-value">${participantName}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Standard:</span>
+                    <span class="detail-value">${standard}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">School:</span>
+                    <span class="detail-value">${school}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Competition:</span>
+                    <span class="detail-value">${competition}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Score:</span>
+                    <span class="detail-value">${score}</span>
+                </div>
+                ${currentRound === 4 ? `
+                <div class="detail-row">
+                    <span class="detail-label">Score Type:</span>
+                    <span class="detail-value">${scoreType}</span>
+                </div>
+                ` : ''}
+                <div class="detail-row">
+                    <span class="detail-label">Rank:</span>
+                    <span class="detail-value">${rank}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Award:</span>
+                    <span class="detail-value">${award}</span>
+                </div>
+            `;
+
+            detailsModal.style.display = 'flex';
+            detailsModal.classList.add('show');
+        }
+
+        // Function to load and display results based on current mode
+        function loadResults() {
+            db.collection("scores").get()
+                .then((snapshot) => {
+                    let scoreData = [];
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        scoreData.push({ id: doc.id, ...data });
+                    });
+
+                    // Update title based on mode
+                    if (isChampionTrophyMode) {
+                        overallTitle.textContent = "🏆 CHAMPION OF CHAMPIONS 🏆";
+                       
+                        displayOverallChampion(scoreData);
+                    } else if (currentRound === 4) {
+                        overallTitle.textContent = "🏆 ROUND 4: DEBATE WINNERS 🏆";
+                        displayRound4Results(scoreData, currentRound4Type);
+                    } else {
+                        const competition = getCompetitionForRound(currentRound);
+                        overallTitle.textContent = `🏆 ROUND ${currentRound} WINNERS 🏆`;
+                        displayCurrentRoundTop3Winners(scoreData);
+                    }
+
+                    // Show the overall rankings container
+                    overallRankings.classList.add('show');
+                    
+                    // Create party poppers animation
+                    createPartyPoppers();
+                })
+                .catch((error) => {
+                    console.error("Error loading overall results: ", error);
+                    showPageMessage("Error loading overall results. Please try again later.", 'error');
+                });
+        }
+
+        // Function to filter and display table data for current round
+        function updateTable() {
+            const competition = getCompetitionForRound(currentRound);
+            const standard = standardFilter.value;
+            const search = searchFilter.value.toLowerCase();
+
+            // Show/hide Score Type column based on current round
+            if (currentRound === 4) {
+                scoreTypeHeader.style.display = 'table-cell';
+            } else {
+                scoreTypeHeader.style.display = 'none';
+            }
+
+            scoreTableBody.innerHTML = '<tr><td colspan="5"><i class="fas fa-spinner fa-spin"></i> Loading scores...</td></tr>';
+
+            db.collection("scores").orderBy("score", "desc").get()
+                .then((snapshot) => {
+                    let scoreData = [];
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        console.log('Firestore Document:', data); // Log raw Firestore data
+                        scoreData.push({ id: doc.id, ...data });
+                    });
+
+                    console.log('Raw Score Data:', scoreData); // Log collected data
+
+                    // Assign ranks based on sorted scores
+                    scoreData = scoreData.map((item, index) => ({
+                        ...item,
+                        rank: index + 1
+                    }));
+
+                    // Store current score data for real-time updates
+                    currentScoreData = scoreData;
+
+                    // Filter data for current round
+                    const filteredData = scoreData.filter(item => {
+                        const matchesCompetition = item.competition === competition;
+                        const matchesStandard = standard === 'all' || item.participantStd === standard;
+                        const matchesSearch = search === '' ||
+                            (item.participantName && item.participantName.toLowerCase().includes(search)) ||
+                            (item.teamName && item.teamName.toLowerCase().includes(search)) ||
+                            (item.schoolName && item.schoolName.toLowerCase().includes(search));
+                        return matchesCompetition && matchesStandard && matchesSearch;
+                    });
+
+                    console.log('Filtered Data:', filteredData); // Log filtered data
+
+                    scoreTableBody.innerHTML = '';
+                    if (filteredData.length === 0) {
+                        scoreTableBody.innerHTML = '<tr><td colspan="5">No scores found for this round.</td></tr>';
+                        showPageMessage("No scores match the selected filters.", 'error');
+                        return;
+                    }
+
+                    filteredData.forEach(item => {
+                        const teamName = item.teamName || item.participantName || 'N/A';
+                        const scoreType = item.scoreType || 'N/A';
+
+                        const row = document.createElement('tr');
+                        if (currentRound === 4) {
+                            row.innerHTML = `
+                                <td>${teamName}</td>
+                                <td>${item.competition || 'N/A'}</td>
+                                <td>${item.score || 'N/A'}</td>
+                                <td class="score-type">${scoreType}</td>
+                                <td>${item.rank}</td>
+                            `;
+                        } else {
+                            row.innerHTML = `
+                                <td>${teamName}</td>
+                                <td>${item.competition || 'N/A'}</td>
+                                <td>${item.score || 'N/A'}</td>
+                                <td>${item.rank}</td>
+                            `;
+                        }
+
+                        // Add click event to show details
+                        row.addEventListener('click', () => {
+                            showParticipantDetails(item);
+                        });
+
+                        scoreTableBody.appendChild(row);
+                    });
+                })
+                .catch((error) => {
+                    console.error("Error loading scores: ", error);
+                    scoreTableBody.innerHTML = '<tr><td colspan="5">Error loading scores.</td></tr>';
+                    showPageMessage("Error loading scores. Please try again later.", 'error');
+                });
+        }
+
+        // Function to highlight score updates in real-time
+        function highlightScoreUpdates() {
+            db.collection("scores").orderBy("score", "desc").get()
+                .then((snapshot) => {
+                    let newScoreData = [];
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        newScoreData.push({ id: doc.id, ...data });
+                    });
+
+                    // Compare with current data to find updates
+                    if (currentScoreData.length > 0) {
+                        newScoreData.forEach((newItem, index) => {
+                            const oldItem = currentScoreData.find(item => item.id === newItem.id);
+                            if (oldItem && oldItem.score !== newItem.score) {
+                                // Score has changed, highlight the row
+                                const rows = scoreTableBody.getElementsByTagName('tr');
+                                for (let i = 0; i < rows.length; i++) {
+                                    const teamNameCell = rows[i].cells[0];
+                                    if (teamNameCell && teamNameCell.textContent === (newItem.teamName || newItem.participantName)) {
+                                        rows[i].classList.add('score-highlight');
+                                        setTimeout(() => {
+                                            rows[i].classList.remove('score-highlight');
+                                        }, 1500);
+                                        break;
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    // Update current data
+                    currentScoreData = newScoreData;
+                })
+                .catch((error) => {
+                    console.error("Error checking for score updates: ", error);
+                });
+        }
+
+        // Show message on page (bottom-right slide up)
+        function showPageMessage(text, type = 'info') {
+            const msg = type === 'success' ? pageSuccessMessage : pageErrorMessage;
+            msg.innerHTML = text;
+
+            // Reset animation
+            msg.classList.remove('show');
+            void msg.offsetWidth; // Trigger reflow
+
+            // Show with animation
+            msg.classList.add('show');
+
+            setTimeout(() => {
+                msg.classList.remove('show');
+            }, 3000);
+        }
+
+        // Event listeners for filters
+        competitionFilter.addEventListener('change', () => {
+            updateStandardOptions(competitionFilter.value);
+        });
+        standardFilter.addEventListener('change', updateTable);
+        searchFilter.addEventListener('input', updateTable);
+
+        // Round navigation event listeners
+        roundNavigation.addEventListener('click', (e) => {
+            if (e.target.classList.contains('round-btn')) {
+                // Update active button
+                document.querySelectorAll('.round-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                e.target.classList.add('active');
+                
+                // Update current round
+                currentRound = parseInt(e.target.getAttribute('data-round'));
+                
+                // Show/hide Round 4 selection based on current round
+                if (currentRound === 4) {
+                    round4Selection.classList.add('show');
+                } else {
+                    round4Selection.classList.remove('show');
+                }
+                
+                // Update table for this round
+                updateTable();
+                
+                // If overall rankings are showing, update them
+                if (overallRankings.classList.contains('show') && !isChampionTrophyMode) {
+                    loadResults();
+                }
+            }
+        });
+
+        // Round 4 selection event listeners
+        round4Selection.addEventListener('click', (e) => {
+            if (e.target.classList.contains('round4-btn')) {
+                // Update active button
+                document.querySelectorAll('.round4-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                e.target.classList.add('active');
+                
+                // Update current Round 4 type
+                currentRound4Type = e.target.getAttribute('data-type');
+                
+                // If overall rankings are showing, update them
+                if (overallRankings.classList.contains('show') && currentRound === 4 && !isChampionTrophyMode) {
+                    loadResults();
+                }
+            }
+        });
+
+        // Result button functionality - Shows results for current round
+        resultBtn.addEventListener('click', () => {
+            isChampionTrophyMode = false;
+            championTrophyBtn.classList.remove('active');
+            
+            // Toggle overall rankings visibility
+            if (overallRankings.classList.contains('show')) {
+                overallRankings.classList.remove('show');
+            } else {
+                // Load and display results for current round
+                loadResults();
+            }
+        });
+
+        // Champion Trophy button functionality - Shows overall champion
+        championTrophyBtn.addEventListener('click', () => {
+            isChampionTrophyMode = true;
+            championTrophyBtn.classList.add('active');
+            
+            // Toggle overall rankings visibility
+            if (overallRankings.classList.contains('show')) {
+                overallRankings.classList.remove('show');
+            } else {
+                // Load and display overall champion
+                loadResults();
+            }
+        });
+
+        // Open admin login modal
+        adminLoginBtn.addEventListener('click', () => {
+            adminModal.style.display = 'flex';
+            adminModal.classList.add('show');
+        });
+
+        // Close modal
+        closeModal.addEventListener('click', () => {
+            adminModal.style.display = 'none';
+            adminModal.classList.remove('show');
+        });
+
+        // Close details modal
+        closeDetailsModal.addEventListener('click', () => {
+            detailsModal.style.display = 'none';
+            detailsModal.classList.remove('show');
+        });
+
+        // Close modal if clicked outside
+        window.addEventListener('click', (e) => {
+            if (e.target === adminModal) {
+                adminModal.style.display = 'none';
+                adminModal.classList.remove('show');
+            }
+            if (e.target === detailsModal) {
+                detailsModal.style.display = 'none';
+                detailsModal.classList.remove('show');
+            }
+        });
+
+        // Handle admin login form submission
+        adminLoginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+
+            // Simple validation (in a real application, this would be done with Firebase Auth)
+            if (email === 'admin@school.com' && password === 'admin123') {
+                isAdminLoggedIn = true;
+                showPageMessage('Login successful! Redirecting to admin dashboard...', 'success');
+                setTimeout(() => {
+                    window.location.href = 'admin.html';
+                }, 1000);
+            } else {
+                showPageMessage('Invalid credentials. Please try again.', 'error');
+            }
+        });
+
+        // Initial render
+        updateStandardOptions('all');
+        updateTable();
+
+        // Set up real-time score updates
+        setInterval(highlightScoreUpdates, 5000); // Check for updates every 5 seconds
+    </script>
+</body>
+
+</html>

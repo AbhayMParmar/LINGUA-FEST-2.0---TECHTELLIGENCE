@@ -1,0 +1,3056 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - School Registration System</title>
+    <link rel="icon" href="Logo.jpg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Additional styles for team name functionality */
+        .team-name-note {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+        
+        /* Competition card styles for quick stats */
+        .competition-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4e73df;
+        }
+        
+        .competition-card h3 {
+            margin-top: 0;
+            color: #4e73df;
+            font-size: 1.1rem;
+        }
+        
+        .competition-stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .stat {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        .stat-value {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #333;
+        }
+        
+        .classes-list {
+            font-size: 0.9rem;
+            color: #555;
+        }
+        
+        .quick-stats-summary {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-item {
+            margin-bottom: 10px;
+        }
+        
+        .summary-label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .summary-value {
+            color: #4e73df;
+            font-weight: bold;
+        }
+        
+        .competition-breakdown {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        
+        .competition-item {
+            background: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo img {
+            height: clamp(35px, 5vw, 50px);
+            margin-right: 10px;
+            transition: transform 0.4s ease, filter 0.4s ease;
+            border-radius: 50%;
+        }
+        
+        .logo:hover img {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+        }
+        
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .logo h1 {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            color: white;
+            line-height: 1.2;
+            transition: color 0.3s ease;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        
+        .logo:hover h1 {
+            color: #fdbb2d;
+        }
+        
+        .logo p {
+            font-size: clamp(0.6rem, 1.3vw, 0.7rem);
+            color: white;
+            font-weight: 600;
+            transition: color 0.3s ease;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        
+        .logo:hover p {
+            color: #fdbb2d;
+        }
+        
+        /* NEW: Styles for debate score options */
+        .debate-score-options {
+            display: none;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #28a745;
+        }
+        
+        .debate-score-options h4 {
+            margin-top: 0;
+            color: #28a745;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+        
+        .score-option-group {
+            margin-bottom: 10px;
+        }
+        
+        .score-option-group label {
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+             <div class="logo">
+                <img src="Logo.jpg" alt="School Logo">
+                <div class="logo-text">
+                    <h1>M.U.S ENGLISH MEDIUM SCHOOL</h1>
+                    <p>PRE PRIMARY - PRIMARY - HIGH SCHOOL</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="admin-actions">
+                    <button class="admin-btn" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                    <button class="logout-btn" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+                <button class="hamburger" onclick="toggleMenu()">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </header>
+
+        <nav class="navbar">
+            <ul class="nav-links">
+                <li><a href="#" onclick="showForm('homeForm', this)" class="active"><i class="fas fa-home"></i> Home</a>
+                </li>
+                <li><a href="#" onclick="showForm('schoolForm', this)"><i class="fas fa-school"></i> School</a></li>
+                <li><a href="#" onclick="showForm('participantForm', this)"><i class="fas fa-user-graduate"></i>
+                        Participant</a></li>
+                <li><a href="#" onclick="showForm('facultyForm', this)"><i class="fas fa-chalkboard-teacher"></i>
+                        Faculty</a></li>
+                <li><a href="#" onclick="showForm('scoreForm', this)"><i class="fas fa-trophy"></i> Scores</a></li>
+                <!-- Mobile Logout Button -->
+                <li class="mobile-logout-item">
+                    <button class="mobile-logout-btn" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="dashboard">
+            <div id="homeForm" class="form-container">
+                <div class="quick-stats">
+                    <div class="stat-item" onclick="showQuickStatsDetails('schools')">
+                        <div class="stat-icon">
+                            <i class="fas fa-school"></i>
+                        </div>
+                        <div class="stat-number" id="schools-count">0</div>
+                        <div class="stat-label">Schools Registered</div>
+                    </div>
+                    <div class="stat-item" onclick="showQuickStatsDetails('faculty')">
+                        <div class="stat-icon">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                        </div>
+                        <div class="stat-number" id="faculty-count">0</div>
+                        <div class="stat-label">Faculty Members</div>
+                    </div>
+                    <div class="stat-item" onclick="showQuickStatsDetails('participants')">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                        <div class="stat-number" id="participants-count">0</div>
+                        <div class="stat-label">Participants</div>
+                    </div>
+                    <div class="stat-item" onclick="showQuickStatsDetails('competitions')">
+                        <div class="stat-icon">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <div class="stat-number" id="competitions-count">4</div>
+                        <div class="stat-label">Competitions</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="homeSchoolSelect">Select School to View Details</label>
+                    <select id="homeSchoolSelect" onchange="loadSelectedSchoolData(this.value)">
+                        <option value="">-- Select a School --</option>
+                    </select>
+                </div>
+                <div id="schoolDataContainer" style="display: none;">
+                    <div class="data-table">
+                        <h2><i class="fas fa-school"></i> School Details</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Team Name</th>
+                                    <th>Address</th>
+                                    <th>Phone</th>
+                                    <th>Email</th>
+                                    <th>Principal</th>
+                                    <th>Registration Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="schoolDetailsBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="data-table">
+                        <h2><i class="fas fa-chalkboard-teacher"></i> Faculty Members</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Faculty Name</th>
+                                    <th>Class</th>
+                                    <th>Registration Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="facultyBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="data-table">
+                        <h2><i class="fas fa-user-graduate"></i> Participants</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Participant Name</th>
+                                    <th>Class</th>
+                                    <th>Competition</th>
+                                    <th>Registration Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="participantsBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="data-table">
+                        <h2><i class="fas fa-trophy"></i> Scores</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Participant Name</th>
+                                    <th>Class</th>
+                                    <th>Competition</th>
+                                    <th>Score Type</th>
+                                    <th>Score</th>
+                                    <th>Submission Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scoresBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Message Container - Bottom Right -->
+            <div id="messageContainer" class="message-container"></div>
+
+            <div id="schoolForm" class="form-container" style="display: none;">
+                <h2><i class="fas fa-school"></i> School Registration Form</h2>
+                <form id="schoolRegistrationForm">
+                    <div class="form-group">
+                        <label for="teamName">Team Name *</label>
+                        <input type="text" id="teamName" name="teamName" required>
+                        <div class="team-name-note">This name will be displayed in tables and lists</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="schoolName">School Name *</label>
+                        <input type="text" id="schoolName" name="schoolName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="schoolAddress">School Address *</label>
+                        <input type="text" id="schoolAddress" name="schoolAddress" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phoneNo">Phone Number (10 digits) *</label>
+                        <input type="tel" id="phoneNo" name="phoneNo" required pattern="[0-9]{10}" maxlength="10"
+                            title="Please enter exactly 10 digits">
+                    </div>
+                    <div class="form-group">
+                        <label for="schoolEmail">School Email *</label>
+                        <input type="email" id="schoolEmail" name="schoolEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="principalName">Principal Name *</label>
+                        <input type="text" id="principalName" name="principalName" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Register School</button>
+                </form>
+                <div class="data-table">
+                    <h2><i class="fas fa-list"></i> Registered Schools</h2>
+                    <div id="schoolLoading" class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> Loading school data...
+                    </div>
+                    <div id="schoolEmptyState" class="empty-state" style="display: none;">
+                        <i class="fas fa-inbox"></i>
+                        <h3>No schools registered yet</h3>
+                        <p>School registrations will appear here once they start registering.</p>
+                    </div>
+                    <div id="schoolTableContainer" style="display: none;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Team Name</th>
+                                    <th>Address</th>
+                                    <th>Phone</th>
+                                    <th>Email</th>
+                                    <th>Principal</th>
+                                    <th>Registration Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="schoolsList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="participantForm" class="form-container" style="display: none;">
+                <h2><i class="fas fa-user-graduate"></i> Participant Registration Form</h2>
+                <form id="participantRegistrationForm">
+                    <!-- NEW: Team Selection Field -->
+                    <div class="form-group">
+                        <label for="participantTeamSelect">Select Team *</label>
+                        <select id="participantTeamSelect" name="teamSelect" required onchange="loadSchoolByTeam(this.value, 'participant')">
+                            <option value="">-- Select a Team --</option>
+                        </select>
+                    </div>
+                    
+                    <!-- NEW: School Name Display (Auto-filled) -->
+                    <div class="form-group">
+                        <label for="participantSchoolDisplay">School Name</label>
+                        <input type="text" id="participantSchoolDisplay" readonly class="readonly-field">
+                        <input type="hidden" id="participantSchoolId" name="schoolId">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="competitionSelect">Select Competition *</label>
+                        <select id="competitionSelect" name="competitionSelect" required>
+                            <option value="">-- Select a Competition --</option>
+                            <option value="SOUND AND SENSE-POETRY RECITATION">SOUND AND SENSE-POETRY RECITATION (Std 1-2)</option>
+                            <option value="SPEAK TO LEAD-STORY TELLING">SPEAK TO LEAD-STORY TELLING (Std 3-4)</option>
+                            <option value="HERE ME OUT!-ELOCUTION">HERE ME OUT!-ELOCUTION (Std 5-6)</option>
+                            <option value="POWER OF SPEECH-DEBATE">POWER OF SPEECH-DEBATE (Std 7-8)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="facultySelect">Select Faculty *</label>
+                        <select id="facultySelect" name="facultySelect" required>
+                            <option value="">-- Select a Faculty --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="participantStd">Standard/Class *</label>
+                        <select id="participantStd" name="participantStd" required>
+                            <option value="">-- Select a Competition First --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="participantName">Participant Name *</label>
+                        <input type="text" id="participantName" name="participantName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="topic">Topic *</label>
+                        <input type="text" id="topic" name="topic" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Register Participant</button>
+                </form>
+                <div class="data-table">
+                    <h2><i class="fas fa-list"></i> Registered Participants</h2>
+                    <div id="participantLoading" class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> Loading participant data...
+                    </div>
+                    <div id="participantEmptyState" class="empty-state" style="display: none;">
+                        <i class="fas fa-inbox"></i>
+                        <h3>No participants registered yet</h3>
+                        <p>Participant registrations will appear here once they start registering.</p>
+                    </div>
+                    <div id="participantTableContainer" style="display: none;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Team Name</th>
+                                    <th>Participant Name</th>
+                                    <th>Class</th>
+                                    <th>Competition</th>
+                                    <th>Faculty</th>
+                                    <th>Registration Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="participantsList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="facultyForm" class="form-container" style="display: none;">
+                <h2><i class="fas fa-chalkboard-teacher"></i> Faculty Registration Form</h2>
+                <form id="facultyRegistrationForm">
+                    <!-- UPDATED: Team Selection Field -->
+                    <div class="form-group">
+                        <label for="facultyTeamSelect">Select Team *</label>
+                        <select id="facultyTeamSelect" name="teamSelect" required onchange="loadSchoolByTeam(this.value, 'faculty')">
+                            <option value="">-- Select a Team --</option>
+                        </select>
+                    </div>
+                    
+                    <!-- UPDATED: School Name Display (Auto-filled) -->
+                    <div class="form-group">
+                        <label for="facultySchoolDisplay">School Name</label>
+                        <input type="text" id="facultySchoolDisplay" readonly class="readonly-field">
+                        <input type="hidden" id="facultySchoolId" name="schoolId">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="facultyName">Faculty Name *</label>
+                        <input type="text" id="facultyName" name="facultyName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="facultyStd">Standard/Class *</label>
+                        <select id="facultyStd" name="facultyStd" required>
+                            <option value="">-- Select a Class --</option>
+                            <option value="class 1-2">class 1-2</option>
+                            <option value="class 3-4">class 3-4</option>
+                            <option value="class 5-6">class 5-6</option>
+                            <option value="class 7-8">class 7-8</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="submit-btn">Register Faculty</button>
+                </form>
+                <div class="data-table">
+                    <h2><i class="fas fa-list"></i> Registered Faculty</h2>
+                    <div id="facultyLoading" class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> Loading faculty data...
+                    </div>
+                    <div id="facultyEmptyState" class="empty-state" style="display: none;">
+                        <i class="fas fa-inbox"></i>
+                        <h3>No faculty registered yet</h3>
+                        <p>Faculty registrations will appear here once they start registering.</p>
+                    </div>
+                    <div id="facultyTableContainer" style="display: none;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Team Name</th>
+                                    <th>Faculty Name</th>
+                                    <th>Class</th>
+                                    <th>Registration Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="facultyList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="scoreForm" class="form-container" style="display: none;">
+                <h2><i class="fas fa-trophy"></i> Score Management</h2>
+                <form id="scoreRegistrationForm">
+                    <!-- UPDATED: Team Selection Field -->
+                    <div class="form-group">
+                        <label for="scoreTeamSelect">Select Team *</label>
+                        <select id="scoreTeamSelect" name="teamSelect" required onchange="loadSchoolByTeam(this.value, 'score')">
+                            <option value="">-- Select a Team --</option>
+                        </select>
+                    </div>
+                    
+                    <!-- UPDATED: School Name Display (Auto-filled) -->
+                    <div class="form-group">
+                        <label for="scoreSchoolDisplay">School Name</label>
+                        <input type="text" id="scoreSchoolDisplay" readonly class="readonly-field">
+                        <input type="hidden" id="scoreSchoolId" name="schoolId">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="scoreParticipantSelect">Select Participant *</label>
+                        <select id="scoreParticipantSelect" name="scoreParticipantSelect" required
+                            onchange="loadParticipantDetails(this.value)">
+                            <option value="">-- Select a Participant --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="scoreCompetitionDisplay">Competition</label>
+                        <input type="text" id="scoreCompetitionDisplay" readonly class="readonly-field">
+                    </div>
+                    <div class="form-group">
+                        <label for="scoreStdDisplay">Standard/Class</label>
+                        <input type="text" id="scoreStdDisplay" readonly class="readonly-field">
+                    </div>
+                    <div class="form-group">
+                        <label for="scoreTopic">Topic *</label>
+                        <input type="text" id="scoreTopic" name="scoreTopic" required>
+                    </div>
+                    
+                    <!-- NEW: Debate Score Options (Only for POWER OF SPEECH-DEBATE) -->
+                    <div id="debateScoreOptions" class="debate-score-options">
+                        <h4><i class="fas fa-microphone-alt"></i> Debate Score Options</h4>
+                        <div class="score-option-group">
+                            <label for="scoreType">Score Type *</label>
+                            <select id="scoreType" name="scoreType" required>
+                                <option value="">-- Select Score Type --</option>
+                                <option value="Speaker">Speaker</option>
+                                <option value="Rebuttal">Rebuttal</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="scoreValue">Score (0-100) *</label>
+                        <input type="number" id="scoreValue" name="scoreValue" min="0" max="100" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Submit Score</button>
+                </form>
+                <div class="data-table">
+                    <h2><i class="fas fa-list"></i> Scores</h2>
+                    <div id="scoreLoading" class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> Loading score data...
+                    </div>
+                    <div id="scoreEmptyState" class="empty-state" style="display: none;">
+                        <i class="fas fa-inbox"></i>
+                        <h3>No scores recorded yet</h3>
+                        <p>Scores will appear here once they are recorded.</p>
+                    </div>
+                    <div id="scoreTableContainer" style="display: none;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Team Name</th>
+                                    <th>Participant Name</th>
+                                    <th>Class</th>
+                                    <th>Competition</th>
+                                    <th>Score Type</th>
+                                    <th>Topic</th>
+                                    <th>Score</th>
+                                    <th>Submission Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scoresList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup for Viewing Details -->
+    <div id="viewPopup" class="popup">
+        <div class="popup-content">
+            <span class="close-popup" onclick="closeViewPopup()">&times;</span>
+            <h2 id="popupTitle">Details</h2>
+            <div id="popupContent"></div>
+        </div>
+    </div>
+
+    <!-- Popup for Update Forms -->
+    <div id="updatePopup" class="popup">
+        <div class="popup-content">
+            <span class="close-popup" onclick="closeUpdatePopup()">&times;</span>
+            <h2 id="updatePopupTitle">Update Information</h2>
+            <div id="updatePopupContent"></div>
+        </div>
+    </div>
+
+    <!-- Popup for Quick Stats Details -->
+    <div id="quickStatsPopup" class="popup">
+        <div class="popup-content large-popup">
+            <span class="close-popup" onclick="closeQuickStatsPopup()">&times;</span>
+            <h2 id="quickStatsPopupTitle">Quick Stats Details</h2>
+            <div id="quickStatsPopupContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBYPhpdmQ91mGF2EHj4jIAPRURk66nQpuk",
+            authDomain: "school-registeration-form.firebaseapp.com",
+            projectId: "school-registeration-form",
+            storageBucket: "school-registeration-form.firebasestorage.app",
+            messagingSenderId: "986025873460",
+            appId: "1:986025873460:web:1cf7dba5636fb30e233a61",
+            measurementId: "G-N4V9RNQ6YZ"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Store Firestore listeners to unsubscribe when needed
+        let activeListeners = {
+            schools: null,
+            participants: null,
+            faculty: null,
+            scores: null,
+            homeSchool: null,
+            homeFaculty: null,
+            homeParticipants: null,
+            homeScores: null,
+            quickStats: null,
+            globalSchools: null,
+            globalFaculty: null,
+            globalParticipants: null,
+            globalScores: null
+        };
+
+        // Current editing item
+        let currentEditingItem = null;
+
+        // Track current data to prevent duplicates
+        let currentSchoolsData = new Map();
+        let currentParticipantsData = new Map();
+        let currentFacultyData = new Map();
+        let currentScoresData = new Map();
+
+        // Track home page data
+        let homeFacultyData = new Map();
+        let homeParticipantData = new Map();
+        let homeScoreData = new Map();
+
+        // Track currently selected school in home page
+        let currentSelectedSchoolId = null;
+
+        // Track if global listeners are already set up
+        let globalListenersSetup = false;
+
+        // NEW: Function to extract numeric value from class string for sorting
+        function getClassNumericValue(classStr) {
+            if (!classStr) return 0;
+            
+            // Extract numbers from class string (e.g., "Class 1", "class 1-2", "1", etc.)
+            const matches = classStr.match(/\d+/g);
+            if (matches && matches.length > 0) {
+                return parseInt(matches[0]);
+            }
+            
+            // For class ranges like "class 1-2", return the first number
+            return 0;
+        }
+
+        // NEW: Function to sort data by class in proper numerical order
+        function sortDataByClass(data, classFieldName) {
+            return data.sort((a, b) => {
+                const aClass = getClassNumericValue(a[classFieldName]);
+                const bClass = getClassNumericValue(b[classFieldName]);
+                return aClass - bClass;
+            });
+        }
+
+        // NEW: Function to load teams for all forms
+        function loadTeamsForForm(formType) {
+            const teamSelectId = formType + 'TeamSelect';
+            const teamSelect = document.getElementById(teamSelectId);
+            const currentValue = teamSelect ? teamSelect.value : '';
+            
+            db.collection("schools").get()
+                .then((querySnapshot) => {
+                    if (teamSelect) {
+                        teamSelect.innerHTML = '<option value="">-- Select a Team --</option>';
+                        
+                        querySnapshot.forEach((doc) => {
+                            const school = doc.data();
+                            const option = document.createElement("option");
+                            option.value = doc.id;
+                            option.textContent = school.teamName || school.schoolName;
+                            teamSelect.appendChild(option);
+                        });
+                        
+                        // Restore the previously selected value if it still exists
+                        if (currentValue) {
+                            teamSelect.value = currentValue;
+                            // Also load the school data for the selected team
+                            loadSchoolByTeam(currentValue, formType);
+                        }
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error loading teams: ", error);
+                });
+        }
+
+        // UPDATED: Function to load school data when team is selected (supports multiple forms)
+        function loadSchoolByTeam(schoolId, formType) {
+            const schoolDisplayId = formType + 'SchoolDisplay';
+            const schoolIdFieldId = formType + 'SchoolId';
+            const schoolDisplay = document.getElementById(schoolDisplayId);
+            const schoolIdField = document.getElementById(schoolIdFieldId);
+            
+            // Reset fields
+            if (schoolDisplay) schoolDisplay.value = '';
+            if (schoolIdField) schoolIdField.value = '';
+            
+            if (!schoolId) return;
+            
+            db.collection("schools").doc(schoolId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const school = doc.data();
+                        if (schoolDisplay) schoolDisplay.value = school.schoolName || '';
+                        if (schoolIdField) schoolIdField.value = schoolId;
+                        
+                        // Load faculty for participant form
+                        if (formType === 'participant') {
+                            const facultySelect = document.getElementById('facultySelect');
+                            if (facultySelect) {
+                                facultySelect.innerHTML = '<option value="">-- Select a Faculty --</option>';
+                                loadFacultyToSelect(schoolId);
+                            }
+                        }
+                        
+                        // Load participants for score form
+                        if (formType === 'score') {
+                            const participantSelect = document.getElementById('scoreParticipantSelect');
+                            if (participantSelect) {
+                                participantSelect.innerHTML = '<option value="">-- Select a Participant --</option>';
+                                loadParticipantsToScore(schoolId);
+                            }
+                        }
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error loading school: ", error);
+                });
+        }
+
+        // NEW: Global real-time listeners for all data
+        function setupGlobalRealTimeListeners() {
+            if (globalListenersSetup) return;
+            
+            console.log("Setting up global real-time listeners...");
+            
+            // Global schools listener - updates school dropdowns and quick stats
+            activeListeners.globalSchools = db.collection("schools").onSnapshot((querySnapshot) => {
+                console.log("Global schools listener triggered");
+                // Update quick stats
+                document.getElementById('schools-count').textContent = querySnapshot.size;
+                
+                // Update all school dropdowns
+                updateAllSchoolDropdowns();
+                
+                // Update team dropdowns for all forms
+                loadTeamsForForm('participant');
+                loadTeamsForForm('faculty');
+                loadTeamsForForm('score');
+                
+                // If home page is showing a school, update it if needed
+                if (currentSelectedSchoolId) {
+                    const schoolExists = querySnapshot.docs.some(doc => doc.id === currentSelectedSchoolId);
+                    if (!schoolExists) {
+                        // School was deleted, clear selection
+                        document.getElementById('homeSchoolSelect').value = '';
+                        document.getElementById('schoolDataContainer').style.display = 'none';
+                        currentSelectedSchoolId = null;
+                    } else {
+                        // Refresh the selected school data
+                        loadSelectedSchoolData(currentSelectedSchoolId);
+                    }
+                }
+            });
+
+            // Global faculty listener
+            activeListeners.globalFaculty = db.collection("faculty").onSnapshot((querySnapshot) => {
+                console.log("Global faculty listener triggered");
+                // Update quick stats
+                document.getElementById('faculty-count').textContent = querySnapshot.size;
+                
+                // If home page is showing a school, update faculty if needed
+                if (currentSelectedSchoolId) {
+                    loadSelectedSchoolData(currentSelectedSchoolId);
+                }
+            });
+
+            // Global participants listener
+            activeListeners.globalParticipants = db.collection("participants").onSnapshot((querySnapshot) => {
+                console.log("Global participants listener triggered");
+                // Update quick stats
+                document.getElementById('participants-count').textContent = querySnapshot.size;
+                
+                // If home page is showing a school, update participants if needed
+                if (currentSelectedSchoolId) {
+                    loadSelectedSchoolData(currentSelectedSchoolId);
+                }
+            });
+
+            // Global scores listener
+            activeListeners.globalScores = db.collection("scores").onSnapshot((querySnapshot) => {
+                console.log("Global scores listener triggered");
+                // If home page is showing a school, update scores if needed
+                if (currentSelectedSchoolId) {
+                    loadSelectedSchoolData(currentSelectedSchoolId);
+                }
+            });
+
+            globalListenersSetup = true;
+        }
+
+        // NEW: Function to update all school dropdowns
+        function updateAllSchoolDropdowns() {
+            const dropdownIds = [
+                'homeSchoolSelect'
+            ];
+            
+            dropdownIds.forEach(dropdownId => {
+                updateSchoolDropdown(dropdownId);
+            });
+        }
+
+        // NEW: Function to update a specific school dropdown
+        function updateSchoolDropdown(dropdownId) {
+            const select = document.getElementById(dropdownId);
+            const currentValue = select.value;
+            
+            db.collection("schools").get()
+                .then((querySnapshot) => {
+                    select.innerHTML = '<option value="">-- Select a School --</option>';
+                    
+                    querySnapshot.forEach((doc) => {
+                        const school = doc.data();
+                        const option = document.createElement("option");
+                        option.value = doc.id;
+                        option.textContent = school.teamName || school.schoolName;
+                        select.appendChild(option);
+                    });
+                    
+                    // Restore the previously selected value if it still exists
+                    if (currentValue) {
+                        const optionExists = Array.from(select.options).some(option => option.value === currentValue);
+                        if (optionExists) {
+                            select.value = currentValue;
+                        }
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error loading schools: ", error);
+                });
+        }
+
+        // NEW: Function to show quick stats details
+        function showQuickStatsDetails(type) {
+            const title = document.getElementById('quickStatsPopupTitle');
+            const content = document.getElementById('quickStatsPopupContent');
+            
+            switch(type) {
+                case 'schools':
+                    title.textContent = 'All Registered Schools';
+                    loadAllSchoolsForQuickStats(content);
+                    break;
+                case 'faculty':
+                    title.textContent = 'All Faculty Members';
+                    loadAllFacultyForQuickStats(content);
+                    break;
+                case 'participants':
+                    title.textContent = 'All Participants';
+                    loadAllParticipantsForQuickStats(content);
+                    break;
+                case 'competitions':
+                    title.textContent = 'Competitions Overview';
+                    loadCompetitionsOverviewForQuickStats(content);
+                    break;
+            }
+            
+            document.getElementById('quickStatsPopup').style.display = 'flex';
+        }
+
+        // NEW: Function to close quick stats popup
+        function closeQuickStatsPopup() {
+            document.getElementById('quickStatsPopup').style.display = 'none';
+        }
+
+        // NEW: Load all schools for quick stats popup
+        function loadAllSchoolsForQuickStats(contentContainer) {
+            contentContainer.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading schools data...</div>';
+            
+            db.collection("schools").get()
+                .then((querySnapshot) => {
+                    if (querySnapshot.empty) {
+                        contentContainer.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><h3>No schools registered yet</h3></div>';
+                        return;
+                    }
+                    
+                    let html = `
+                        <div class="quick-stats-summary">
+                            <div class="summary-item">
+                                <span class="summary-label">Total Schools:</span>
+                                <span class="summary-value">${querySnapshot.size}</span>
+                            </div>
+                        </div>
+                        <div class="data-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Team Name</th>
+                                        <th>School Name</th>
+                                        <th>Address</th>
+                                        <th>Phone</th>
+                                        <th>Email</th>
+                                        <th>Principal</th>
+                                        <th>Registration Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    querySnapshot.forEach((doc) => {
+                        const school = doc.data();
+                        html += `
+                            <tr>
+                                <td>${school.teamName || 'N/A'}</td>
+                                <td>${school.schoolName || 'N/A'}</td>
+                                <td>${school.schoolAddress || 'N/A'}</td>
+                                <td>${school.phoneNo || 'N/A'}</td>
+                                <td>${school.schoolEmail || 'N/A'}</td>
+                                <td>${school.principalName || 'N/A'}</td>
+                                <td>${school.registrationDate || 'N/A'}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    
+                    contentContainer.innerHTML = html;
+                })
+                .catch((error) => {
+                    console.error("Error loading schools: ", error);
+                    contentContainer.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><h3>Error loading schools data</h3></div>';
+                });
+        }
+
+        // NEW: Load all faculty for quick stats popup
+        function loadAllFacultyForQuickStats(contentContainer) {
+            contentContainer.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading faculty data...</div>';
+            
+            db.collection("faculty").get()
+                .then((querySnapshot) => {
+                    if (querySnapshot.empty) {
+                        contentContainer.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><h3>No faculty registered yet</h3></div>';
+                        return;
+                    }
+                    
+                    let html = `
+                        <div class="quick-stats-summary">
+                            <div class="summary-item">
+                                <span class="summary-label">Total Faculty:</span>
+                                <span class="summary-value">${querySnapshot.size}</span>
+                            </div>
+                        </div>
+                        <div class="data-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Team Name</th>
+                                        <th>Faculty Name</th>
+                                        <th>Class</th>
+                                        <th>Registration Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    querySnapshot.forEach((doc) => {
+                        const faculty = doc.data();
+                        html += `
+                            <tr>
+                                <td>${faculty.teamName || 'N/A'}</td>
+                                <td>${faculty.facultyName || 'N/A'}</td>
+                                <td>${faculty.facultyStd || 'N/A'}</td>
+                                <td>${faculty.registrationDate || 'N/A'}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    
+                    contentContainer.innerHTML = html;
+                })
+                .catch((error) => {
+                    console.error("Error loading faculty: ", error);
+                    contentContainer.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><h3>Error loading faculty data</h3></div>';
+                });
+        }
+
+        // NEW: Load all participants for quick stats popup
+        function loadAllParticipantsForQuickStats(contentContainer) {
+            contentContainer.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading participants data...</div>';
+            
+            db.collection("participants").get()
+                .then((querySnapshot) => {
+                    if (querySnapshot.empty) {
+                        contentContainer.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><h3>No participants registered yet</h3></div>';
+                        return;
+                    }
+                    
+                    // Count participants by competition
+                    const competitionCounts = {};
+                    querySnapshot.forEach((doc) => {
+                        const participant = doc.data();
+                        const competition = participant.competition || 'Unknown';
+                        competitionCounts[competition] = (competitionCounts[competition] || 0) + 1;
+                    });
+                    
+                    let html = `
+                        <div class="quick-stats-summary">
+                            <div class="summary-item">
+                                <span class="summary-label">Total Participants:</span>
+                                <span class="summary-value">${querySnapshot.size}</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">By Competition:</span>
+                                <div class="competition-breakdown">
+                    `;
+                    
+                    for (const [competition, count] of Object.entries(competitionCounts)) {
+                        html += `<div class="competition-item">${competition}: <strong>${count}</strong></div>`;
+                    }
+                    
+                    html += `
+                                </div>
+                            </div>
+                        </div>
+                        <div class="data-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Team Name</th>
+                                        <th>Participant Name</th>
+                                        <th>Class</th>
+                                        <th>Competition</th>
+                                        <th>Faculty</th>
+                                        <th>Registration Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    querySnapshot.forEach((doc) => {
+                        const participant = doc.data();
+                        html += `
+                            <tr>
+                                <td>${participant.teamName || 'N/A'}</td>
+                                <td>${participant.participantName || 'N/A'}</td>
+                                <td>${participant.participantStd || 'N/A'}</td>
+                                <td>${participant.competition || 'N/A'}</td>
+                                <td>${participant.facultyName || 'N/A'}</td>
+                                <td>${participant.registrationDate || 'N/A'}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    
+                    contentContainer.innerHTML = html;
+                })
+                .catch((error) => {
+                    console.error("Error loading participants: ", error);
+                    contentContainer.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><h3>Error loading participants data</h3></div>';
+                });
+        }
+
+        // NEW: Load competitions overview for quick stats popup
+        function loadCompetitionsOverviewForQuickStats(contentContainer) {
+            contentContainer.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading competitions data...</div>';
+            
+            // Get all participants to count by competition
+            db.collection("participants").get()
+                .then((participantsSnapshot) => {
+                    const competitionData = {};
+                    
+                    // Initialize competition data
+                    const competitions = [
+                        "SOUND AND SENSE-POETRY RECITATION",
+                        "SPEAK TO LEAD-STORY TELLING", 
+                        "HERE ME OUT!-ELOCUTION",
+                        "POWER OF SPEECH-DEBATE"
+                    ];
+                    
+                    competitions.forEach(competition => {
+                        competitionData[competition] = {
+                            participants: 0,
+                            classes: new Set()
+                        };
+                    });
+                    
+                    // Count participants and classes for each competition
+                    participantsSnapshot.forEach((doc) => {
+                        const participant = doc.data();
+                        const competition = participant.competition;
+                        const participantClass = participant.participantStd;
+                        
+                        if (competitionData[competition]) {
+                            competitionData[competition].participants++;
+                            if (participantClass) {
+                                competitionData[competition].classes.add(participantClass);
+                            }
+                        }
+                    });
+                    
+                    let html = `
+                        <div class="quick-stats-summary">
+                            <div class="summary-item">
+                                <span class="summary-label">Total Competitions:</span>
+                                <span class="summary-value">${competitions.length}</span>
+                            </div>
+                        </div>
+                        <div class="competitions-overview">
+                    `;
+                    
+                    competitions.forEach(competition => {
+                        const data = competitionData[competition];
+                        html += `
+                            <div class="competition-card">
+                                <h3>${competition}</h3>
+                                <div class="competition-stats">
+                                    <div class="stat">
+                                        <span class="stat-label">Participants:</span>
+                                        <span class="stat-value">${data.participants}</span>
+                                    </div>
+                                    <div class="stat">
+                                        <span class="stat-label">Classes:</span>
+                                        <span class="stat-value">${data.classes.size}</span>
+                                    </div>
+                                </div>
+                                ${data.classes.size > 0 ? 
+                                    `<div class="classes-list">
+                                        <strong>Classes:</strong> ${Array.from(data.classes).join(', ')}
+                                    </div>` : ''
+                                }
+                            </div>
+                        `;
+                    });
+                    
+                    html += `</div>`;
+                    
+                    contentContainer.innerHTML = html;
+                })
+                .catch((error) => {
+                    console.error("Error loading competitions: ", error);
+                    contentContainer.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><h3>Error loading competitions data</h3></div>';
+                });
+        }
+
+        function showMessage(text, type = 'info') {
+            const messageContainer = document.getElementById('messageContainer');
+            const messageId = 'msg-' + Date.now();
+            
+            const messageElement = document.createElement('div');
+            messageElement.id = messageId;
+            messageElement.className = `message ${type}`;
+            messageElement.innerHTML = `
+                <div class="message-content">
+                    <div class="message-icon">
+                        <i class="fas ${getMessageIcon(type)}"></i>
+                    </div>
+                    <div class="message-text">${text}</div>
+                </div>
+                <button class="message-close" onclick="closeMessage('${messageId}')">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            messageContainer.appendChild(messageElement);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                closeMessage(messageId);
+            }, 5000);
+        }
+
+        function getMessageIcon(type) {
+            switch(type) {
+                case 'success': return 'fa-check-circle';
+                case 'error': return 'fa-exclamation-circle';
+                case 'info': return 'fa-info-circle';
+                default: return 'fa-info-circle';
+            }
+        }
+
+        function closeMessage(messageId) {
+            const messageElement = document.getElementById(messageId);
+            if (messageElement) {
+                messageElement.classList.add('closing');
+                setTimeout(() => {
+                    if (messageElement.parentNode) {
+                        messageElement.parentNode.removeChild(messageElement);
+                    }
+                }, 300);
+            }
+        }
+
+        function cleanupAllListeners() {
+            console.log("Cleaning up all listeners...");
+            
+            // Unsubscribe from all listeners
+            Object.keys(activeListeners).forEach(key => {
+                if (activeListeners[key]) {
+                    activeListeners[key]();
+                    activeListeners[key] = null;
+                }
+            });
+
+            // Reset global listeners flag
+            globalListenersSetup = false;
+
+            // Clear current data
+            currentSchoolsData.clear();
+            currentParticipantsData.clear();
+            currentFacultyData.clear();
+            currentScoresData.clear();
+            homeFacultyData.clear();
+            homeParticipantData.clear();
+            homeScoreData.clear();
+        }
+
+        function cleanupFormListeners() {
+            console.log("Cleaning up form-specific listeners...");
+            
+            // Clean up form-specific listeners only
+            if (activeListeners.schools) {
+                activeListeners.schools();
+                activeListeners.schools = null;
+            }
+            if (activeListeners.participants) {
+                activeListeners.participants();
+                activeListeners.participants = null;
+            }
+            if (activeListeners.faculty) {
+                activeListeners.faculty();
+                activeListeners.faculty = null;
+            }
+            if (activeListeners.scores) {
+                activeListeners.scores();
+                activeListeners.scores = null;
+            }
+            if (activeListeners.homeSchool) {
+                activeListeners.homeSchool();
+                activeListeners.homeSchool = null;
+            }
+            if (activeListeners.homeFaculty) {
+                activeListeners.homeFaculty();
+                activeListeners.homeFaculty = null;
+            }
+            if (activeListeners.homeParticipants) {
+                activeListeners.homeParticipants();
+                activeListeners.homeParticipants = null;
+            }
+            if (activeListeners.homeScores) {
+                activeListeners.homeScores();
+                activeListeners.homeScores = null;
+            }
+        }
+
+        function showForm(formId, element) {
+            document.querySelectorAll('.form-container').forEach(form => {
+                form.style.display = 'none';
+            });
+
+            const form = document.getElementById(formId);
+            if (form) {
+                form.style.display = 'block';
+            }
+
+            document.querySelectorAll('.nav-links a').forEach(link => {
+                link.classList.remove('active');
+            });
+            element.classList.add('active');
+
+            // Close mobile menu if open
+            document.querySelector('.nav-links').classList.remove('active');
+
+            // Clean up form-specific listeners first
+            cleanupFormListeners();
+
+            if (formId === 'homeForm') {
+                // Set up global listeners for home page
+                setupGlobalRealTimeListeners();
+                // Set up real-time listener for home school select
+                activeListeners.homeSchool = db.collection("schools").onSnapshot((querySnapshot) => {
+                    updateSchoolDropdown('homeSchoolSelect');
+                });
+            } else if (formId === 'schoolForm') {
+                loadSchoolsData();
+            } else if (formId === 'participantForm') {
+                // Load teams for participant form
+                loadTeamsForForm('participant');
+                loadParticipantsData();
+            } else if (formId === 'facultyForm') {
+                // Load teams for faculty form
+                loadTeamsForForm('faculty');
+                loadFacultyData();
+            } else if (formId === 'scoreForm') {
+                // Load teams for score form
+                loadTeamsForForm('score');
+                loadScoresData();
+            }
+        }
+
+        // Setup real-time listener for quick stats
+        function setupQuickStatsRealTimeListener() {
+            if (!activeListeners.quickStats) {
+                // Set up real-time listeners for all collections to update quick stats
+                // Schools count
+                activeListeners.quickStats = db.collection("schools").onSnapshot((querySnapshot) => {
+                    document.getElementById('schools-count').textContent = querySnapshot.size;
+                });
+
+                // Faculty count
+                db.collection("faculty").onSnapshot((querySnapshot) => {
+                    document.getElementById('faculty-count').textContent = querySnapshot.size;
+                });
+
+                // Participants count
+                db.collection("participants").onSnapshot((querySnapshot) => {
+                    document.getElementById('participants-count').textContent = querySnapshot.size;
+                });
+            }
+        }
+
+        function toggleMenu() {
+            const navLinks = document.querySelector('.nav-links');
+            navLinks.classList.toggle('active');
+        }
+
+        // Popup functions
+        function openViewPopup(title, content) {
+            document.getElementById('popupTitle').textContent = title;
+            document.getElementById('popupContent').innerHTML = content;
+            document.getElementById('viewPopup').style.display = 'flex';
+        }
+
+        function closeViewPopup() {
+            document.getElementById('viewPopup').style.display = 'none';
+        }
+
+        function openUpdatePopup(title, content) {
+            document.getElementById('updatePopupTitle').textContent = title;
+            document.getElementById('updatePopupContent').innerHTML = content;
+            document.getElementById('updatePopup').style.display = 'flex';
+        }
+
+        function closeUpdatePopup() {
+            document.getElementById('updatePopup').style.display = 'none';
+            currentEditingItem = null;
+        }
+
+        // View details functions
+        function viewSchoolDetails(schoolId) {
+            db.collection("schools").doc(schoolId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const school = doc.data();
+                        const details = `
+                            <h3>School Details</h3>
+                            <table>
+                                <tr><th>Field</th><th>Value</th></tr>
+                                <tr><td>Team Name</td><td>${school.teamName || 'N/A'}</td></tr>
+                                <tr><td>School Name</td><td>${school.schoolName || 'N/A'}</td></tr>
+                                <tr><td>Address</td><td>${school.schoolAddress || 'N/A'}</td></tr>
+                                <tr><td>Phone</td><td>${school.phoneNo || 'N/A'}</td></tr>
+                                <tr><td>Email</td><td>${school.schoolEmail || 'N/A'}</td></tr>
+                                <tr><td>Principal</td><td>${school.principalName || 'N/A'}</td></tr>
+                                <tr><td>Registered on</td><td>${school.registrationDate || 'N/A'}</td></tr>
+                                <tr><td>Timestamp</td><td>${school.timestamp?.toDate().toLocaleString() || 'N/A'}</td></tr>
+                            </table>
+                        `;
+                        openViewPopup("School Details", details);
+                    } else {
+                        showMessage("School not found!", 'error');
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error getting school:", error);
+                    showMessage("Error retrieving school details.", 'error');
+                });
+        }
+
+        function viewParticipantDetails(participantId) {
+            db.collection("participants").doc(participantId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const participant = doc.data();
+                        const details = `
+                            <h3>Participant Details</h3>
+                            <table>
+                                <tr><th>Field</th><th>Value</th></tr>
+                                <tr><td>Team Name</td><td>${participant.teamName || 'N/A'}</td></tr>
+                                <tr><td>School</td><td>${participant.schoolName || 'N/A'}</td></tr>
+                                <tr><td>Name</td><td>${participant.participantName || 'N/A'}</td></tr>
+                                <tr><td>Class</td><td>${participant.participantStd || 'N/A'}</td></tr>
+                                <tr><td>Competition</td><td>${participant.competition || 'N/A'}</td></tr>
+                                <tr><td>Faculty</td><td>${participant.facultyName || 'N/A'}</td></tr>
+                                <tr><td>Topic</td><td>${participant.topic || 'N/A'}</td></tr>
+                                <tr><td>Registered on</td><td>${participant.registrationDate || 'N/A'}</td></tr>
+                                <tr><td>Timestamp</td><td>${participant.timestamp?.toDate().toLocaleString() || 'N/A'}</td></tr>
+                            </table>
+                        `;
+                        openViewPopup("Participant Details", details);
+                    } else {
+                        showMessage("Participant not found!", 'error');
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error getting participant:", error);
+                    showMessage("Error retrieving participant details.", 'error');
+                });
+        }
+
+        function viewFacultyDetails(facultyId) {
+            db.collection("faculty").doc(facultyId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const faculty = doc.data();
+                        const details = `
+                            <h3>Faculty Details</h3>
+                            <table>
+                                <tr><th>Field</th><th>Value</th></tr>
+                                <tr><td>Team Name</td><td>${faculty.teamName || 'N/A'}</td></tr>
+                                <tr><td>School</td><td>${faculty.schoolName || 'N/A'}</td></tr>
+                                <tr><td>Name</td><td>${faculty.facultyName || 'N/A'}</td></tr>
+                                <tr><td>Class</td><td>${faculty.facultyStd || 'N/A'}</td></tr>
+                                <tr><td>Registered on</td><td>${faculty.registrationDate || 'N/A'}</td></tr>
+                                <tr><td>Timestamp</td><td>${faculty.timestamp?.toDate().toLocaleString() || 'N/A'}</td></tr>
+                            </table>
+                        `;
+                        openViewPopup("Faculty Details", details);
+                    } else {
+                        showMessage("Faculty not found!", 'error');
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error getting faculty:", error);
+                    showMessage("Error retrieving faculty details.", 'error');
+                });
+        }
+
+        function viewScoreDetails(scoreId) {
+            db.collection("scores").doc(scoreId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const score = doc.data();
+                        const details = `
+                            <h3>Score Details</h3>
+                            <table>
+                                <tr><th>Field</th><th>Value</th></tr>
+                                <tr><td>Team Name</td><td>${score.teamName || 'N/A'}</td></tr>
+                                <tr><td>School</td><td>${score.schoolName || 'N/A'}</td></tr>
+                                <tr><td>Participant</td><td>${score.participantName || 'N/A'}</td></tr>
+                                <tr><td>Class</td><td>${score.participantStd || 'N/A'}</td></tr>
+                                <tr><td>Competition</td><td>${score.competition || 'N/A'}</td></tr>
+                                <tr><td>Score Type</td><td>${score.scoreType || 'N/A'}</td></tr>
+                                <tr><td>Topic</td><td>${score.topic || 'N/A'}</td></tr>
+                                <tr><td>Score</td><td>${score.score || 'N/A'}</td></tr>
+                                <tr><td>Submission Date</td><td>${score.submissionDate || 'N/A'}</td></tr>
+                                <tr><td>Timestamp</td><td>${score.timestamp?.toDate().toLocaleString() || 'N/A'}</td></tr>
+                            </table>
+                        `;
+                        openViewPopup("Score Details", details);
+                    } else {
+                        showMessage("Score not found!", 'error');
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error getting score:", error);
+                    showMessage("Error retrieving score details.", 'error');
+                });
+        }
+
+        // Update functions
+        function updateSchool(schoolId) {
+            currentEditingItem = { type: 'school', id: schoolId };
+
+            db.collection("schools").doc(schoolId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const school = doc.data();
+                        const form = `
+                            <form id="updateSchoolForm">
+                                <div class="form-group">
+                                    <label for="updateTeamName">Team Name *</label>
+                                    <input type="text" id="updateTeamName" value="${school.teamName || ''}" required>
+                                    <div class="team-name-note">This name will be displayed in tables and lists</div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="updateSchoolName">School Name *</label>
+                                    <input type="text" id="updateSchoolName" value="${school.schoolName || ''}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="updateSchoolAddress">School Address *</label>
+                                    <input type="text" id="updateSchoolAddress" value="${school.schoolAddress || ''}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="updatePhoneNo">Phone Number *</label>
+                                    <input type="tel" id="updatePhoneNo" value="${school.phoneNo || ''}" required pattern="[0-9]{10}" maxlength="10">
+                                </div>
+                                <div class="form-group">
+                                    <label for="updateSchoolEmail">School Email *</label>
+                                    <input type="email" id="updateSchoolEmail" value="${school.schoolEmail || ''}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="updatePrincipalName">Principal Name *</label>
+                                    <input type="text" id="updatePrincipalName" value="${school.principalName || ''}" required>
+                                </div>
+                                <button type="submit" class="submit-btn">Update School</button>
+                            </form>
+                        `;
+                        openUpdatePopup("Update School", form);
+
+                        // Add form submit handler
+                        document.getElementById('updateSchoolForm').addEventListener('submit', function (e) {
+                            e.preventDefault();
+                            updateSchoolData(schoolId);
+                        });
+                    } else {
+                        showMessage("School not found!", 'error');
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error getting school:", error);
+                    showMessage("Error retrieving school details.", 'error');
+                });
+        }
+
+        function updateSchoolData(schoolId) {
+            const teamName = document.getElementById('updateTeamName').value;
+            const schoolName = document.getElementById('updateSchoolName').value;
+            const schoolAddress = document.getElementById('updateSchoolAddress').value;
+            const phoneNo = document.getElementById('updatePhoneNo').value;
+            const schoolEmail = document.getElementById('updateSchoolEmail').value;
+            const principalName = document.getElementById('updatePrincipalName').value;
+
+            if (!/^\d{10}$/.test(phoneNo)) {
+                showMessage('Phone number must be exactly 10 digits.', 'error');
+                return;
+            }
+
+            const updatedData = {
+                teamName: teamName,
+                schoolName: schoolName,
+                schoolAddress: schoolAddress,
+                phoneNo: phoneNo,
+                schoolEmail: schoolEmail,
+                principalName: principalName
+            };
+
+            db.collection("schools").doc(schoolId).update(updatedData)
+                .then(() => {
+                    showMessage('School updated successfully!', 'success');
+                    closeUpdatePopup();
+                })
+                .catch((error) => {
+                    console.error("Error updating school: ", error);
+                    showMessage("Error updating school. Please check Firebase permissions and try again.", 'error');
+                });
+        }
+
+        function updateParticipant(participantId) {
+            currentEditingItem = { type: 'participant', id: participantId };
+
+            db.collection("participants").doc(participantId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const participant = doc.data();
+                        const form = `
+                            <form id="updateParticipantForm">
+                                <div class="form-group">
+                                    <label for="updateParticipantName">Participant Name *</label>
+                                    <input type="text" id="updateParticipantName" value="${participant.participantName || ''}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="updateParticipantStd">Standard/Class *</label>
+                                    <input type="text" id="updateParticipantStd" value="${participant.participantStd || ''}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="updateTopic">Topic *</label>
+                                    <input type="text" id="updateTopic" value="${participant.topic || ''}" required>
+                                </div>
+                                <button type="submit" class="submit-btn">Update Participant</button>
+                            </form>
+                        `;
+                        openUpdatePopup("Update Participant", form);
+
+                        // Add form submit handler
+                        document.getElementById('updateParticipantForm').addEventListener('submit', function (e) {
+                            e.preventDefault();
+                            updateParticipantData(participantId);
+                        });
+                    } else {
+                        showMessage("Participant not found!", 'error');
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error getting participant:", error);
+                    showMessage("Error retrieving participant details.", 'error');
+                });
+        }
+
+        function updateParticipantData(participantId) {
+            const participantName = document.getElementById('updateParticipantName').value;
+            const participantStd = document.getElementById('updateParticipantStd').value;
+            const topic = document.getElementById('updateTopic').value;
+
+            const updatedData = {
+                participantName: participantName,
+                participantStd: participantStd,
+                topic: topic
+            };
+
+            db.collection("participants").doc(participantId).update(updatedData)
+                .then(() => {
+                    showMessage('Participant updated successfully!', 'success');
+                    closeUpdatePopup();
+                })
+                .catch((error) => {
+                    console.error("Error updating participant: ", error);
+                    showMessage("Error updating participant. Please check Firebase permissions and try again.", 'error');
+                });
+        }
+
+        function updateFaculty(facultyId) {
+            currentEditingItem = { type: 'faculty', id: facultyId };
+
+            db.collection("faculty").doc(facultyId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const faculty = doc.data();
+                        const form = `
+                            <form id="updateFacultyForm">
+                                <div class="form-group">
+                                    <label for="updateFacultyName">Faculty Name *</label>
+                                    <input type="text" id="updateFacultyName" value="${faculty.facultyName || ''}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="updateFacultyStd">Standard/Class *</label>
+                                    <select id="updateFacultyStd" required>
+                                        <option value="">-- Select a Class --</option>
+                                        <option value="class 1-2" ${faculty.facultyStd === 'class 1-2' ? 'selected' : ''}>class 1-2</option>
+                                        <option value="class 3-4" ${faculty.facultyStd === 'class 3-4' ? 'selected' : ''}>class 3-4</option>
+                                        <option value="class 5-6" ${faculty.facultyStd === 'class 5-6' ? 'selected' : ''}>class 5-6</option>
+                                        <option value="class 7-8" ${faculty.facultyStd === 'class 7-8' ? 'selected' : ''}>class 7-8</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="submit-btn">Update Faculty</button>
+                            </form>
+                        `;
+                        openUpdatePopup("Update Faculty", form);
+
+                        // Add form submit handler
+                        document.getElementById('updateFacultyForm').addEventListener('submit', function (e) {
+                            e.preventDefault();
+                            updateFacultyData(facultyId);
+                        });
+                    } else {
+                        showMessage("Faculty not found!", 'error');
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error getting faculty:", error);
+                    showMessage("Error retrieving faculty details.", 'error');
+                });
+        }
+
+        function updateFacultyData(facultyId) {
+            const facultyName = document.getElementById('updateFacultyName').value;
+            const facultyStd = document.getElementById('updateFacultyStd').value;
+
+            const updatedData = {
+                facultyName: facultyName,
+                facultyStd: facultyStd
+            };
+
+            db.collection("faculty").doc(facultyId).update(updatedData)
+                .then(() => {
+                    showMessage('Faculty updated successfully!', 'success');
+                    closeUpdatePopup();
+                })
+                .catch((error) => {
+                    console.error("Error updating faculty: ", error);
+                    showMessage("Error updating faculty. Please check Firebase permissions and try again.", 'error');
+                });
+        }
+
+        function updateScore(scoreId) {
+            currentEditingItem = { type: 'score', id: scoreId };
+
+            db.collection("scores").doc(scoreId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const score = doc.data();
+                        const form = `
+                            <form id="updateScoreForm">
+                                <div class="form-group">
+                                    <label for="updateScoreTopic">Topic *</label>
+                                    <input type="text" id="updateScoreTopic" value="${score.topic || ''}" required>
+                                </div>
+                                ${score.competition === "POWER OF SPEECH-DEBATE" ? `
+                                <div class="form-group">
+                                    <label for="updateScoreType">Score Type *</label>
+                                    <select id="updateScoreType" required>
+                                        <option value="">-- Select Score Type --</option>
+                                        <option value="Best Speaker" ${score.scoreType === 'Best Speaker' ? 'selected' : ''}>Best Speaker</option>
+                                        <option value="Best Rebuttal" ${score.scoreType === 'Best Rebuttal' ? 'selected' : ''}>Best Rebuttal</option>
+                                    </select>
+                                </div>
+                                ` : ''}
+                                <div class="form-group">
+                                    <label for="updateScoreValue">Score (0-100) *</label>
+                                    <input type="number" id="updateScoreValue" value="${score.score || ''}" min="0" max="100" required>
+                                </div>
+                                <button type="submit" class="submit-btn">Update Score</button>
+                            </form>
+                        `;
+                        openUpdatePopup("Update Score", form);
+
+                        // Add form submit handler
+                        document.getElementById('updateScoreForm').addEventListener('submit', function (e) {
+                            e.preventDefault();
+                            updateScoreData(scoreId);
+                        });
+                    } else {
+                        showMessage("Score not found!", 'error');
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error getting score:", error);
+                    showMessage("Error retrieving score details.", 'error');
+                });
+        }
+
+        function updateScoreData(scoreId) {
+            const scoreTopic = document.getElementById('updateScoreTopic').value;
+            const scoreValue = document.getElementById('updateScoreValue').value;
+            let scoreType = '';
+
+            // Get score type only for debate competition
+            const competitionDisplay = document.getElementById('scoreCompetitionDisplay').value;
+            if (competitionDisplay === "POWER OF SPEECH-DEBATE") {
+                scoreType = document.getElementById('updateScoreType').value;
+                if (!scoreType) {
+                    showMessage('Please select a score type for debate competition.', 'error');
+                    return;
+                }
+            }
+
+            if (scoreValue < 0 || scoreValue > 100) {
+                showMessage('Score must be between 0 and 100.', 'error');
+                return;
+            }
+
+            const updatedData = {
+                topic: scoreTopic,
+                score: parseInt(scoreValue)
+            };
+
+            // Add score type only for debate competition
+            if (competitionDisplay === "POWER OF SPEECH-DEBATE") {
+                updatedData.scoreType = scoreType;
+            }
+
+            db.collection("scores").doc(scoreId).update(updatedData)
+                .then(() => {
+                    showMessage('Score updated successfully!', 'success');
+                    closeUpdatePopup();
+                })
+                .catch((error) => {
+                    console.error("Error updating score: ", error);
+                    showMessage("Error updating score. Please check Firebase permissions and try again.", 'error');
+                });
+        }
+
+        // Delete functions - HOME PAGE SPECIFIC
+        function deleteHomeSchool(schoolId) {
+            if (confirm("Are you sure you want to delete this school? This will also delete associated faculty, participants, and scores.")) {
+                // Delete associated faculty
+                db.collection("faculty").where("schoolId", "==", schoolId).get()
+                    .then((querySnapshot) => {
+                        const batch = db.batch();
+                        querySnapshot.forEach((doc) => {
+                            batch.delete(doc.ref);
+                        });
+                        return batch.commit();
+                    })
+                    .then(() => {
+                        // Delete associated participants
+                        return db.collection("participants").where("schoolId", "==", schoolId).get();
+                    })
+                    .then((querySnapshot) => {
+                        const batch = db.batch();
+                        querySnapshot.forEach((doc) => {
+                            batch.delete(doc.ref);
+                        });
+                        return batch.commit();
+                    })
+                    .then(() => {
+                        // Delete associated scores
+                        return db.collection("scores").where("schoolId", "==", schoolId).get();
+                    })
+                    .then((querySnapshot) => {
+                        const batch = db.batch();
+                        querySnapshot.forEach((doc) => {
+                            batch.delete(doc.ref);
+                        });
+                        return batch.commit();
+                    })
+                    .then(() => {
+                        // Finally delete the school
+                        return db.collection("schools").doc(schoolId).delete();
+                    })
+                    .then(() => {
+                        showMessage('School deleted successfully!', 'success');
+                        // If this school was selected in home page, clear the selection
+                        const homeSchoolSelect = document.getElementById('homeSchoolSelect');
+                        if (homeSchoolSelect.value === schoolId) {
+                            homeSchoolSelect.value = '';
+                            document.getElementById('schoolDataContainer').style.display = 'none';
+                            currentSelectedSchoolId = null;
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Error deleting school: ", error);
+                        showMessage("Error deleting school. Please check Firebase permissions and try again.", 'error');
+                    });
+            }
+        }
+
+        function deleteHomeParticipant(participantId) {
+            if (confirm("Are you sure you want to delete this participant? This will also delete associated scores.")) {
+                // Delete associated scores
+                db.collection("scores").where("participantId", "==", participantId).get()
+                    .then((querySnapshot) => {
+                        const batch = db.batch();
+                        querySnapshot.forEach((doc) => {
+                            batch.delete(doc.ref);
+                        });
+                        return batch.commit();
+                    })
+                    .then(() => {
+                        // Delete the participant
+                        return db.collection("participants").doc(participantId).delete();
+                    })
+                    .then(() => {
+                        showMessage('Participant deleted successfully!', 'success');
+                    })
+                    .catch((error) => {
+                        console.error("Error deleting participant: ", error);
+                        showMessage("Error deleting participant. Please check Firebase permissions and try again.", 'error');
+                    });
+            }
+        }
+
+        function deleteHomeFaculty(facultyId) {
+            if (confirm("Are you sure you want to delete this faculty member?")) {
+                db.collection("faculty").doc(facultyId).delete()
+                    .then(() => {
+                        showMessage('Faculty deleted successfully!', 'success');
+                    })
+                    .catch((error) => {
+                        console.error("Error deleting faculty: ", error);
+                        showMessage("Error deleting faculty. Please check Firebase permissions and try again.", 'error');
+                    });
+            }
+        }
+
+        function deleteHomeScore(scoreId) {
+            if (confirm("Are you sure you want to delete this score?")) {
+                db.collection("scores").doc(scoreId).delete()
+                    .then(() => {
+                        showMessage('Score deleted successfully!', 'success');
+                    })
+                    .catch((error) => {
+                        console.error("Error deleting score: ", error);
+                        showMessage("Error deleting score. Please check Firebase permissions and try again.", 'error');
+                    });
+            }
+        }
+
+        // Delete functions - REGULAR
+        function deleteSchool(schoolId) {
+            if (confirm("Are you sure you want to delete this school? This will also delete associated faculty, participants, and scores.")) {
+                // Delete associated faculty
+                db.collection("faculty").where("schoolId", "==", schoolId).get()
+                    .then((querySnapshot) => {
+                        const batch = db.batch();
+                        querySnapshot.forEach((doc) => {
+                            batch.delete(doc.ref);
+                        });
+                        return batch.commit();
+                    })
+                    .then(() => {
+                        // Delete associated participants
+                        return db.collection("participants").where("schoolId", "==", schoolId).get();
+                    })
+                    .then((querySnapshot) => {
+                        const batch = db.batch();
+                        querySnapshot.forEach((doc) => {
+                            batch.delete(doc.ref);
+                        });
+                        return batch.commit();
+                    })
+                    .then(() => {
+                        // Delete associated scores
+                        return db.collection("scores").where("schoolId", "==", schoolId).get();
+                    })
+                    .then((querySnapshot) => {
+                        const batch = db.batch();
+                        querySnapshot.forEach((doc) => {
+                            batch.delete(doc.ref);
+                        });
+                        return batch.commit();
+                    })
+                    .then(() => {
+                        // Finally delete the school
+                        return db.collection("schools").doc(schoolId).delete();
+                    })
+                    .then(() => {
+                        showMessage('School deleted successfully!', 'success');
+                    })
+                    .catch((error) => {
+                        console.error("Error deleting school: ", error);
+                        showMessage("Error deleting school. Please check Firebase permissions and try again.", 'error');
+                    });
+            }
+        }
+
+        function deleteParticipant(participantId) {
+            if (confirm("Are you sure you want to delete this participant? This will also delete associated scores.")) {
+                // Delete associated scores
+                db.collection("scores").where("participantId", "==", participantId).get()
+                    .then((querySnapshot) => {
+                        const batch = db.batch();
+                        querySnapshot.forEach((doc) => {
+                            batch.delete(doc.ref);
+                        });
+                        return batch.commit();
+                    })
+                    .then(() => {
+                        // Delete the participant
+                        return db.collection("participants").doc(participantId).delete();
+                    })
+                    .then(() => {
+                        showMessage('Participant deleted successfully!', 'success');
+                    })
+                    .catch((error) => {
+                        console.error("Error deleting participant: ", error);
+                        showMessage("Error deleting participant. Please check Firebase permissions and try again.", 'error');
+                    });
+            }
+        }
+
+        function deleteFaculty(facultyId) {
+            if (confirm("Are you sure you want to delete this faculty member?")) {
+                db.collection("faculty").doc(facultyId).delete()
+                    .then(() => {
+                        showMessage('Faculty deleted successfully!', 'success');
+                    })
+                    .catch((error) => {
+                        console.error("Error deleting faculty: ", error);
+                        showMessage("Error deleting faculty. Please check Firebase permissions and try again.", 'error');
+                    });
+            }
+        }
+
+        function deleteScore(scoreId) {
+            if (confirm("Are you sure you want to delete this score?")) {
+                db.collection("scores").doc(scoreId).delete()
+                    .then(() => {
+                        showMessage('Score deleted successfully!', 'success');
+                    })
+                    .catch((error) => {
+                        console.error("Error deleting score: ", error);
+                        showMessage("Error deleting score. Please check Firebase permissions and try again.", 'error');
+                    });
+            }
+        }
+
+        // Load data functions with real-time listeners
+        function loadFacultyToSelect(schoolId) {
+            const facultySelect = document.getElementById('facultySelect');
+            const currentValue = facultySelect.value;
+            facultySelect.innerHTML = '<option value="">-- Select a Faculty --</option>';
+
+            if (!schoolId) return;
+
+            db.collection("faculty").where("schoolId", "==", schoolId).get()
+                .then((querySnapshot) => {
+                    querySnapshot.forEach((doc) => {
+                        const faculty = doc.data();
+                        const option = document.createElement("option");
+                        option.value = doc.id;
+                        option.textContent = faculty.facultyName;
+                        facultySelect.appendChild(option);
+                    });
+                    
+                    // Restore the previously selected value if it still exists
+                    if (currentValue) {
+                        facultySelect.value = currentValue;
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error loading faculty: ", error);
+                });
+        }
+
+        function loadParticipantsToScore(schoolId) {
+            const participantSelect = document.getElementById('scoreParticipantSelect');
+            const currentValue = participantSelect.value;
+            participantSelect.innerHTML = '<option value="">-- Select a Participant --</option>';
+
+            if (!schoolId) return;
+
+            db.collection("participants").where("schoolId", "==", schoolId).get()
+                .then((querySnapshot) => {
+                    querySnapshot.forEach((doc) => {
+                        const participant = doc.data();
+                        const option = document.createElement("option");
+                        option.value = doc.id;
+                        option.textContent = participant.participantName;
+                        participantSelect.appendChild(option);
+                    });
+                    
+                    // Restore the previously selected value if it still exists
+                    if (currentValue) {
+                        participantSelect.value = currentValue;
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error loading participants: ", error);
+                });
+        }
+
+        // UPDATED: Function to load participant details and show/hide debate score options
+        function loadParticipantDetails(participantId) {
+            const competitionDisplay = document.getElementById('scoreCompetitionDisplay');
+            const stdDisplay = document.getElementById('scoreStdDisplay');
+            const debateScoreOptions = document.getElementById('debateScoreOptions');
+            const scoreTypeSelect = document.getElementById('scoreType');
+
+            // Reset fields
+            competitionDisplay.value = '';
+            stdDisplay.value = '';
+            document.getElementById('scoreTopic').value = '';
+            debateScoreOptions.style.display = 'none';
+            scoreTypeSelect.required = false;
+
+            if (!participantId) return;
+
+            db.collection("participants").doc(participantId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const participant = doc.data();
+                        competitionDisplay.value = participant.competition || '';
+                        stdDisplay.value = participant.participantStd || '';
+                        document.getElementById('scoreTopic').value = participant.topic || '';
+                        
+                        // Show debate score options only for POWER OF SPEECH-DEBATE competition
+                        if (participant.competition === "POWER OF SPEECH-DEBATE") {
+                            debateScoreOptions.style.display = 'block';
+                            scoreTypeSelect.required = true;
+                        }
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error loading participant: ", error);
+                });
+        }
+
+        function loadSchoolsData() {
+            document.getElementById('schoolLoading').style.display = 'block';
+            document.getElementById('schoolEmptyState').style.display = 'none';
+            document.getElementById('schoolTableContainer').style.display = 'none';
+
+            // Clear current data and table
+            currentSchoolsData.clear();
+            document.getElementById('schoolsList').innerHTML = '';
+
+            // Set up real-time listener
+            activeListeners.schools = db.collection("schools").onSnapshot((querySnapshot) => {
+                const schoolsList = document.getElementById('schoolsList');
+                
+                // Process changes
+                querySnapshot.docChanges().forEach((change) => {
+                    const doc = change.doc;
+                    const schoolId = doc.id;
+                    
+                    if (change.type === "added") {
+                        // Add new school only if it doesn't exist
+                        if (!currentSchoolsData.has(schoolId)) {
+                            const school = doc.data();
+                            const row = createSchoolRow(schoolId, school);
+                            schoolsList.appendChild(row);
+                            currentSchoolsData.set(schoolId, row);
+                        }
+                    } else if (change.type === "modified") {
+                        // Update existing school
+                        if (currentSchoolsData.has(schoolId)) {
+                            const school = doc.data();
+                            const newRow = createSchoolRow(schoolId, school);
+                            const oldRow = currentSchoolsData.get(schoolId);
+                            oldRow.parentNode.replaceChild(newRow, oldRow);
+                            currentSchoolsData.set(schoolId, newRow);
+                        }
+                    } else if (change.type === "removed") {
+                        // Remove school
+                        if (currentSchoolsData.has(schoolId)) {
+                            const row = currentSchoolsData.get(schoolId);
+                            row.remove();
+                            currentSchoolsData.delete(schoolId);
+                        }
+                    }
+                });
+
+                // Update UI states
+                if (currentSchoolsData.size === 0) {
+                    document.getElementById('schoolLoading').style.display = 'none';
+                    document.getElementById('schoolEmptyState').style.display = 'block';
+                    document.getElementById('schoolTableContainer').style.display = 'none';
+                } else {
+                    document.getElementById('schoolLoading').style.display = 'none';
+                    document.getElementById('schoolEmptyState').style.display = 'none';
+                    document.getElementById('schoolTableContainer').style.display = 'block';
+                }
+            }, (error) => {
+                console.error("Error loading schools: ", error);
+                document.getElementById('schoolLoading').style.display = 'none';
+                document.getElementById('schoolEmptyState').style.display = 'block';
+            });
+        }
+
+        function createSchoolRow(schoolId, school) {
+            const row = document.createElement('tr');
+            row.onclick = () => viewSchoolDetails(schoolId);
+            row.style.cursor = 'pointer';
+            row.innerHTML = `
+                <td>${school.teamName || 'N/A'}</td>
+                <td>${school.schoolAddress || 'N/A'}</td>
+                <td>${school.phoneNo || 'N/A'}</td>
+                <td>${school.schoolEmail || 'N/A'}</td>
+                <td>${school.principalName || 'N/A'}</td>
+                <td>${school.registrationDate || 'N/A'}</td>
+                <td>
+                    <button class="update-btn" onclick="event.stopPropagation(); updateSchool('${schoolId}')">
+                        <i class="fas fa-edit"></i> Update
+                    </button>
+                    <button class="delete-btn" onclick="event.stopPropagation(); deleteSchool('${schoolId}')">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </td>
+            `;
+            return row;
+        }
+
+        function loadParticipantsData() {
+            document.getElementById('participantLoading').style.display = 'block';
+            document.getElementById('participantEmptyState').style.display = 'none';
+            document.getElementById('participantTableContainer').style.display = 'none';
+
+            // Clear current data and table
+            currentParticipantsData.clear();
+            document.getElementById('participantsList').innerHTML = '';
+
+            // Set up real-time listener
+            activeListeners.participants = db.collection("participants").onSnapshot((querySnapshot) => {
+                const participantsList = document.getElementById('participantsList');
+                
+                // Collect all participants and sort them by class
+                const participants = [];
+                querySnapshot.forEach((doc) => {
+                    const participant = doc.data();
+                    participants.push({
+                        id: doc.id,
+                        ...participant
+                    });
+                });
+                
+                // Sort participants by class in numerical order
+                const sortedParticipants = sortDataByClass(participants, 'participantStd');
+                
+                // Clear the table
+                participantsList.innerHTML = '';
+                
+                // Add sorted participants to the table
+                sortedParticipants.forEach(participant => {
+                    const row = createParticipantRow(participant.id, participant);
+                    participantsList.appendChild(row);
+                    currentParticipantsData.set(participant.id, row);
+                });
+
+                // Update UI states
+                if (currentParticipantsData.size === 0) {
+                    document.getElementById('participantLoading').style.display = 'none';
+                    document.getElementById('participantEmptyState').style.display = 'block';
+                    document.getElementById('participantTableContainer').style.display = 'none';
+                } else {
+                    document.getElementById('participantLoading').style.display = 'none';
+                    document.getElementById('participantEmptyState').style.display = 'none';
+                    document.getElementById('participantTableContainer').style.display = 'block';
+                }
+            }, (error) => {
+                console.error("Error loading participants: ", error);
+                document.getElementById('participantLoading').style.display = 'none';
+                document.getElementById('participantEmptyState').style.display = 'block';
+            });
+        }
+
+        function createParticipantRow(participantId, participant) {
+            const row = document.createElement('tr');
+            row.onclick = () => viewParticipantDetails(participantId);
+            row.style.cursor = 'pointer';
+            row.innerHTML = `
+                <td>${participant.teamName || 'N/A'}</td>
+                <td>${participant.participantName || 'N/A'}</td>
+                <td>${participant.participantStd || 'N/A'}</td>
+                <td>${participant.competition || 'N/A'}</td>
+                <td>${participant.facultyName || 'N/A'}</td>
+                <td>${participant.registrationDate || 'N/A'}</td>
+                <td>
+                    <button class="update-btn" onclick="event.stopPropagation(); updateParticipant('${participantId}')">
+                        <i class="fas fa-edit"></i> Update
+                    </button>
+                    <button class="delete-btn" onclick="event.stopPropagation(); deleteParticipant('${participantId}')">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </td>
+            `;
+            return row;
+        }
+
+        function loadFacultyData() {
+            document.getElementById('facultyLoading').style.display = 'block';
+            document.getElementById('facultyEmptyState').style.display = 'none';
+            document.getElementById('facultyTableContainer').style.display = 'none';
+
+            // Clear current data and table
+            currentFacultyData.clear();
+            document.getElementById('facultyList').innerHTML = '';
+
+            // Set up real-time listener
+            activeListeners.faculty = db.collection("faculty").onSnapshot((querySnapshot) => {
+                const facultyList = document.getElementById('facultyList');
+                
+                // Collect all faculty and sort them by class
+                const facultyMembers = [];
+                querySnapshot.forEach((doc) => {
+                    const faculty = doc.data();
+                    facultyMembers.push({
+                        id: doc.id,
+                        ...faculty
+                    });
+                });
+                
+                // Sort faculty by class in numerical order
+                const sortedFaculty = sortDataByClass(facultyMembers, 'facultyStd');
+                
+                // Clear the table
+                facultyList.innerHTML = '';
+                
+                // Add sorted faculty to the table
+                sortedFaculty.forEach(faculty => {
+                    const row = createFacultyRow(faculty.id, faculty);
+                    facultyList.appendChild(row);
+                    currentFacultyData.set(faculty.id, row);
+                });
+
+                // Update UI states
+                if (currentFacultyData.size === 0) {
+                    document.getElementById('facultyLoading').style.display = 'none';
+                    document.getElementById('facultyEmptyState').style.display = 'block';
+                    document.getElementById('facultyTableContainer').style.display = 'none';
+                } else {
+                    document.getElementById('facultyLoading').style.display = 'none';
+                    document.getElementById('facultyEmptyState').style.display = 'none';
+                    document.getElementById('facultyTableContainer').style.display = 'block';
+                }
+            }, (error) => {
+                console.error("Error loading faculty: ", error);
+                document.getElementById('facultyLoading').style.display = 'none';
+                document.getElementById('facultyEmptyState').style.display = 'block';
+            });
+        }
+
+        function createFacultyRow(facultyId, faculty) {
+            const row = document.createElement('tr');
+            row.onclick = () => viewFacultyDetails(facultyId);
+            row.style.cursor = 'pointer';
+            row.innerHTML = `
+                <td>${faculty.teamName || 'N/A'}</td>
+                <td>${faculty.facultyName || 'N/A'}</td>
+                <td>${faculty.facultyStd || 'N/A'}</td>
+                <td>${faculty.registrationDate || 'N/A'}</td>
+                <td>
+                    <button class="update-btn" onclick="event.stopPropagation(); updateFaculty('${facultyId}')">
+                        <i class="fas fa-edit"></i> Update
+                    </button>
+                    <button class="delete-btn" onclick="event.stopPropagation(); deleteFaculty('${facultyId}')">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </td>
+            `;
+            return row;
+        }
+
+        function loadScoresData() {
+            document.getElementById('scoreLoading').style.display = 'block';
+            document.getElementById('scoreEmptyState').style.display = 'none';
+            document.getElementById('scoreTableContainer').style.display = 'none';
+
+            // Clear current data and table
+            currentScoresData.clear();
+            document.getElementById('scoresList').innerHTML = '';
+
+            // Set up real-time listener
+            activeListeners.scores = db.collection("scores").onSnapshot((querySnapshot) => {
+                const scoresList = document.getElementById('scoresList');
+                
+                // Collect all scores and sort them by class
+                const scores = [];
+                querySnapshot.forEach((doc) => {
+                    const score = doc.data();
+                    scores.push({
+                        id: doc.id,
+                        ...score
+                    });
+                });
+                
+                // Sort scores by class in numerical order
+                const sortedScores = sortDataByClass(scores, 'participantStd');
+                
+                // Clear the table
+                scoresList.innerHTML = '';
+                
+                // Add sorted scores to the table
+                sortedScores.forEach(score => {
+                    const row = createScoreRow(score.id, score);
+                    scoresList.appendChild(row);
+                    currentScoresData.set(score.id, row);
+                });
+
+                // Update UI states
+                if (currentScoresData.size === 0) {
+                    document.getElementById('scoreLoading').style.display = 'none';
+                    document.getElementById('scoreEmptyState').style.display = 'block';
+                    document.getElementById('scoreTableContainer').style.display = 'none';
+                } else {
+                    document.getElementById('scoreLoading').style.display = 'none';
+                    document.getElementById('scoreEmptyState').style.display = 'none';
+                    document.getElementById('scoreTableContainer').style.display = 'block';
+                }
+            }, (error) => {
+                console.error("Error loading scores: ", error);
+                document.getElementById('scoreLoading').style.display = 'none';
+                document.getElementById('scoreEmptyState').style.display = 'block';
+            });
+        }
+
+        // UPDATED: Function to create score row with score type
+        function createScoreRow(scoreId, score) {
+            const row = document.createElement('tr');
+            row.onclick = () => viewScoreDetails(scoreId);
+            row.style.cursor = 'pointer';
+            row.innerHTML = `
+                <td>${score.teamName || 'N/A'}</td>
+                <td>${score.participantName || 'N/A'}</td>
+                <td>${score.participantStd || 'N/A'}</td>
+                <td>${score.competition || 'N/A'}</td>
+                <td>${score.scoreType || 'N/A'}</td>
+                <td>${score.topic || 'N/A'}</td>
+                <td>${score.score || 'N/A'}</td>
+                <td>${score.submissionDate || 'N/A'}</td>
+                <td>
+                    <button class="update-btn" onclick="event.stopPropagation(); updateScore('${scoreId}')">
+                        <i class="fas fa-edit"></i> Update
+                    </button>
+                    <button class="delete-btn" onclick="event.stopPropagation(); deleteScore('${scoreId}')">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </td>
+            `;
+            return row;
+        }
+
+        // Home page real-time update functions - IMPROVED VERSION
+        function updateHomeSchoolDetails(schoolId, school) {
+            const schoolBody = document.getElementById('schoolDetailsBody');
+            schoolBody.innerHTML = `
+                <tr onclick="viewSchoolDetails('${schoolId}')" style="cursor: pointer;">
+                    <td>${school.teamName || 'N/A'}</td>
+                    <td>${school.schoolAddress || 'N/A'}</td>
+                    <td>${school.phoneNo || 'N/A'}</td>
+                    <td>${school.schoolEmail || 'N/A'}</td>
+                    <td>${school.principalName || 'N/A'}</td>
+                    <td>${school.registrationDate || 'N/A'}</td>
+                    <td>
+                        <button class="update-btn" onclick="event.stopPropagation(); updateSchool('${schoolId}')">
+                            <i class="fas fa-edit"></i> Update
+                        </button>
+                        <button class="delete-btn" onclick="event.stopPropagation(); deleteHomeSchool('${schoolId}')">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function updateHomeFacultyData(querySnapshot) {
+            const facultyBody = document.getElementById('facultyBody');
+            
+            // Clear existing data first to prevent duplicates
+            homeFacultyData.clear();
+            facultyBody.innerHTML = '';
+            
+            // Collect all faculty and sort them by class
+            const facultyMembers = [];
+            querySnapshot.forEach((doc) => {
+                const faculty = doc.data();
+                facultyMembers.push({
+                    id: doc.id,
+                    ...faculty
+                });
+            });
+            
+            // Sort faculty by class in numerical order
+            const sortedFaculty = sortDataByClass(facultyMembers, 'facultyStd');
+            
+            // Add sorted faculty to the table
+            sortedFaculty.forEach(faculty => {
+                const row = createHomeFacultyRow(faculty.id, faculty);
+                facultyBody.appendChild(row);
+                homeFacultyData.set(faculty.id, row);
+            });
+
+            // Update UI state if no data
+            if (homeFacultyData.size === 0) {
+                facultyBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No faculty registered for this school</td></tr>';
+            }
+        }
+
+        function createHomeFacultyRow(facultyId, faculty) {
+            const row = document.createElement('tr');
+            row.onclick = () => viewFacultyDetails(facultyId);
+            row.style.cursor = 'pointer';
+            row.innerHTML = `
+                <td>${faculty.facultyName || 'N/A'}</td>
+                <td>${faculty.facultyStd || 'N/A'}</td>
+                <td>${faculty.registrationDate || 'N/A'}</td>
+                <td>
+                    <button class="update-btn" onclick="event.stopPropagation(); updateFaculty('${facultyId}')">
+                        <i class="fas fa-edit"></i> Update
+                    </button>
+                    <button class="delete-btn" onclick="event.stopPropagation(); deleteHomeFaculty('${facultyId}')">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </td>
+            `;
+            return row;
+        }
+
+        function updateHomeParticipantData(querySnapshot) {
+            const participantsBody = document.getElementById('participantsBody');
+            
+            // Clear existing data first to prevent duplicates
+            homeParticipantData.clear();
+            participantsBody.innerHTML = '';
+            
+            // Collect all participants and sort them by class
+            const participants = [];
+            querySnapshot.forEach((doc) => {
+                const participant = doc.data();
+                participants.push({
+                    id: doc.id,
+                    ...participant
+                });
+            });
+            
+            // Sort participants by class in numerical order
+            const sortedParticipants = sortDataByClass(participants, 'participantStd');
+            
+            // Add sorted participants to the table
+            sortedParticipants.forEach(participant => {
+                const row = createHomeParticipantRow(participant.id, participant);
+                participantsBody.appendChild(row);
+                homeParticipantData.set(participant.id, row);
+            });
+
+            // Update UI state if no data
+            if (homeParticipantData.size === 0) {
+                participantsBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No participants registered for this school</td></tr>';
+            }
+        }
+
+        function createHomeParticipantRow(participantId, participant) {
+            const row = document.createElement('tr');
+            row.onclick = () => viewParticipantDetails(participantId);
+            row.style.cursor = 'pointer';
+            row.innerHTML = `
+                <td>${participant.participantName || 'N/A'}</td>
+                <td>${participant.participantStd || 'N/A'}</td>
+                <td>${participant.competition || 'N/A'}</td>
+                <td>${participant.registrationDate || 'N/A'}</td>
+                <td>
+                    <button class="update-btn" onclick="event.stopPropagation(); updateParticipant('${participantId}')">
+                        <i class="fas fa-edit"></i> Update
+                    </button>
+                    <button class="delete-btn" onclick="event.stopPropagation(); deleteHomeParticipant('${participantId}')">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </td>
+            `;
+            return row;
+        }
+
+        function updateHomeScoreData(querySnapshot) {
+            const scoresBody = document.getElementById('scoresBody');
+            
+            // Clear existing data first to prevent duplicates
+            homeScoreData.clear();
+            scoresBody.innerHTML = '';
+            
+            // Collect all scores and sort them by class
+            const scores = [];
+            querySnapshot.forEach((doc) => {
+                const score = doc.data();
+                scores.push({
+                    id: doc.id,
+                    ...score
+                });
+            });
+            
+            // Sort scores by class in numerical order
+            const sortedScores = sortDataByClass(scores, 'participantStd');
+            
+            // Add sorted scores to the table
+            sortedScores.forEach(score => {
+                const row = createHomeScoreRow(score.id, score);
+                scoresBody.appendChild(row);
+                homeScoreData.set(score.id, row);
+            });
+
+            // Update UI state if no data
+            if (homeScoreData.size === 0) {
+                scoresBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No scores recorded for this school</td></tr>';
+            }
+        }
+
+        // UPDATED: Function to create home score row with score type
+        function createHomeScoreRow(scoreId, score) {
+            const row = document.createElement('tr');
+            row.onclick = () => viewScoreDetails(scoreId);
+            row.style.cursor = 'pointer';
+            row.innerHTML = `
+                <td>${score.participantName || 'N/A'}</td>
+                <td>${score.participantStd || 'N/A'}</td>
+                <td>${score.competition || 'N/A'}</td>
+                <td>${score.scoreType || 'N/A'}</td>
+                <td>${score.score || 'N/A'}</td>
+                <td>${score.submissionDate || 'N/A'}</td>
+                <td>
+                    <button class="update-btn" onclick="event.stopPropagation(); updateScore('${scoreId}')">
+                        <i class="fas fa-edit"></i> Update
+                    </button>
+                    <button class="delete-btn" onclick="event.stopPropagation(); deleteHomeScore('${scoreId}')">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </td>
+            `;
+            return row;
+        }
+
+        function loadSelectedSchoolData(schoolId) {
+            const container = document.getElementById('schoolDataContainer');
+            currentSelectedSchoolId = schoolId;
+            
+            if (!schoolId) {
+                container.style.display = 'none';
+                
+                // Clean up home page real-time listeners
+                if (activeListeners.homeFaculty) {
+                    activeListeners.homeFaculty();
+                    activeListeners.homeFaculty = null;
+                }
+                if (activeListeners.homeParticipants) {
+                    activeListeners.homeParticipants();
+                    activeListeners.homeParticipants = null;
+                }
+                if (activeListeners.homeScores) {
+                    activeListeners.homeScores();
+                    activeListeners.homeScores = null;
+                }
+                if (activeListeners.homeSchool) {
+                    activeListeners.homeSchool();
+                    activeListeners.homeSchool = null;
+                }
+                
+                // Clear home data
+                homeFacultyData.clear();
+                homeParticipantData.clear();
+                homeScoreData.clear();
+                return;
+            }
+
+            container.style.display = 'block';
+
+            // Clear existing home data
+            homeFacultyData.clear();
+            homeParticipantData.clear();
+            homeScoreData.clear();
+
+            // Clear tables before loading new data
+            document.getElementById('facultyBody').innerHTML = '';
+            document.getElementById('participantsBody').innerHTML = '';
+            document.getElementById('scoresBody').innerHTML = '';
+
+            // Set up real-time listeners for home page
+            // Set up real-time listener for school details in home page
+            activeListeners.homeSchool = db.collection("schools").doc(schoolId)
+                .onSnapshot((doc) => {
+                    if (doc.exists) {
+                        updateHomeSchoolDetails(schoolId, doc.data());
+                    } else {
+                        // School was deleted, hide the container
+                        document.getElementById('schoolDataContainer').style.display = 'none';
+                        document.getElementById('homeSchoolSelect').value = '';
+                        currentSelectedSchoolId = null;
+                        showMessage("The selected school has been deleted.", 'info');
+                    }
+                }, (error) => {
+                    console.error("Error in home school listener:", error);
+                });
+
+            // Set up real-time listener for faculty in home page
+            activeListeners.homeFaculty = db.collection("faculty")
+                .where("schoolId", "==", schoolId)
+                .onSnapshot((querySnapshot) => {
+                    updateHomeFacultyData(querySnapshot);
+                }, (error) => {
+                    console.error("Error in home faculty listener:", error);
+                });
+
+            // Set up real-time listener for participants in home page
+            activeListeners.homeParticipants = db.collection("participants")
+                .where("schoolId", "==", schoolId)
+                .onSnapshot((querySnapshot) => {
+                    updateHomeParticipantData(querySnapshot);
+                }, (error) => {
+                    console.error("Error in home participants listener:", error);
+                });
+
+            // Set up real-time listener for scores in home page
+            activeListeners.homeScores = db.collection("scores")
+                .where("schoolId", "==", schoolId)
+                .onSnapshot((querySnapshot) => {
+                    updateHomeScoreData(querySnapshot);
+                }, (error) => {
+                    console.error("Error in home scores listener:", error);
+                });
+
+            // Load initial school details
+            db.collection("schools").doc(schoolId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        updateHomeSchoolDetails(schoolId, doc.data());
+                    } else {
+                        // School doesn't exist, hide the container
+                        document.getElementById('schoolDataContainer').style.display = 'none';
+                        document.getElementById('homeSchoolSelect').value = '';
+                        currentSelectedSchoolId = null;
+                        showMessage("The selected school does not exist.", 'error');
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error loading school:", error);
+                    document.getElementById('schoolDataContainer').style.display = 'none';
+                    document.getElementById('homeSchoolSelect').value = '';
+                    currentSelectedSchoolId = null;
+                });
+        }
+
+        function refreshData() {
+            showMessage('Refreshing data...', 'info');
+            
+            // Clean up all listeners and clear data
+            cleanupAllListeners();
+            
+            // Clear all tables
+            document.getElementById('schoolsList').innerHTML = '';
+            document.getElementById('participantsList').innerHTML = '';
+            document.getElementById('facultyList').innerHTML = '';
+            document.getElementById('scoresList').innerHTML = '';
+            
+            updateAllSchoolDropdowns();
+            loadTeamsForForm('participant');
+            loadTeamsForForm('faculty');
+            loadTeamsForForm('score');
+
+            // Refresh current form data
+            const activeForm = document.querySelector('.form-container[style="display: block;"]');
+            if (activeForm) {
+                if (activeForm.id === 'schoolForm') {
+                    loadSchoolsData();
+                } else if (activeForm.id === 'participantForm') {
+                    loadParticipantsData();
+                } else if (activeForm.id === 'facultyForm') {
+                    loadFacultyData();
+                } else if (activeForm.id === 'scoreForm') {
+                    loadScoresData();
+                } else if (activeForm.id === 'homeForm') {
+                    // For home form, reload the selected school data if any
+                    const selectedSchoolId = document.getElementById('homeSchoolSelect').value;
+                    if (selectedSchoolId) {
+                        loadSelectedSchoolData(selectedSchoolId);
+                    }
+                    // Set up real-time listeners for home page
+                    setupGlobalRealTimeListeners();
+                }
+            }
+
+            setTimeout(() => {
+                showMessage('Data refreshed successfully!', 'success');
+            }, 1000);
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                // Clean up all listeners before logout
+                cleanupAllListeners();
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Form submission handlers
+        document.getElementById('schoolRegistrationForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const teamName = document.getElementById('teamName').value;
+            const schoolName = document.getElementById('schoolName').value;
+            const schoolAddress = document.getElementById('schoolAddress').value;
+            const phoneNo = document.getElementById('phoneNo').value;
+            const schoolEmail = document.getElementById('schoolEmail').value;
+            const principalName = document.getElementById('principalName').value;
+
+            if (!/^\d{10}$/.test(phoneNo)) {
+                showMessage('Phone number must be exactly 10 digits.', 'error');
+                return;
+            }
+
+            const registrationDate = new Date().toLocaleDateString('en-GB');
+
+            db.collection("schools").add({
+                teamName: teamName,
+                schoolName: schoolName,
+                schoolAddress: schoolAddress,
+                phoneNo: phoneNo,
+                schoolEmail: schoolEmail,
+                principalName: principalName,
+                registrationDate: registrationDate,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            })
+                .then(() => {
+                    showMessage('School registered successfully!', 'success');
+                    document.getElementById('schoolRegistrationForm').reset();
+                    // Global listeners will update all dropdowns automatically
+                })
+                .catch((error) => {
+                    console.error("Error adding school: ", error);
+                    showMessage("Error registering school. Please check Firebase permissions and try again.", 'error');
+                });
+        });
+
+        // UPDATED: Participant Registration Form Submission
+        document.getElementById('participantRegistrationForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const teamSelect = document.getElementById('participantTeamSelect');
+            const schoolId = teamSelect.value;
+            const teamName = teamSelect.options[teamSelect.selectedIndex].text;
+            const schoolName = document.getElementById('participantSchoolDisplay').value;
+            const competition = document.getElementById('competitionSelect').value;
+            const facultySelect = document.getElementById('facultySelect');
+            const facultyId = facultySelect.value;
+            const facultyName = facultySelect.options[facultySelect.selectedIndex].text;
+            const participantStd = document.getElementById('participantStd').value;
+            const participantName = document.getElementById('participantName').value;
+            const topic = document.getElementById('topic').value;
+
+            if (!schoolId) {
+                showMessage('Please select a team.', 'error');
+                return;
+            }
+
+            if (!facultyId) {
+                showMessage('Please select a faculty.', 'error');
+                return;
+            }
+
+            const registrationDate = new Date().toLocaleDateString('en-GB');
+
+            db.collection("participants").add({
+                schoolId: schoolId,
+                teamName: teamName,
+                schoolName: schoolName,
+                competition: competition,
+                facultyId: facultyId,
+                facultyName: facultyName,
+                participantStd: participantStd,
+                participantName: participantName,
+                topic: topic,
+                registrationDate: registrationDate,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            })
+            .then(() => {
+                showMessage('Participant registered successfully!', 'success');
+                document.getElementById('participantRegistrationForm').reset();
+                // Reset the school display field
+                document.getElementById('participantSchoolDisplay').value = '';
+                // Global listeners will update home page automatically
+            })
+            .catch((error) => {
+                console.error("Error adding participant: ", error);
+                showMessage("Error registering participant. Please check Firebase permissions and try again.", 'error');
+            });
+        });
+
+        // UPDATED: Faculty Registration Form Submission
+        document.getElementById('facultyRegistrationForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const teamSelect = document.getElementById('facultyTeamSelect');
+            const schoolId = teamSelect.value;
+            const teamName = teamSelect.options[teamSelect.selectedIndex].text;
+            const schoolName = document.getElementById('facultySchoolDisplay').value;
+            const facultyName = document.getElementById('facultyName').value;
+            const facultyStd = document.getElementById('facultyStd').value;
+
+            if (!schoolId) {
+                showMessage('Please select a team.', 'error');
+                return;
+            }
+
+            const registrationDate = new Date().toLocaleDateString('en-GB');
+
+            db.collection("faculty").add({
+                schoolId: schoolId,
+                teamName: teamName,
+                schoolName: schoolName,
+                facultyName: facultyName,
+                facultyStd: facultyStd,
+                registrationDate: registrationDate,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            })
+            .then(() => {
+                showMessage('Faculty registered successfully!', 'success');
+                document.getElementById('facultyRegistrationForm').reset();
+                // Reset the school display field
+                document.getElementById('facultySchoolDisplay').value = '';
+                // Global listeners will update home page automatically
+            })
+            .catch((error) => {
+                console.error("Error adding faculty: ", error);
+                showMessage("Error registering faculty. Please check Firebase permissions and try again.", 'error');
+            });
+        });
+
+        // UPDATED: Score Registration Form Submission with debate score options
+        document.getElementById('scoreRegistrationForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const teamSelect = document.getElementById('scoreTeamSelect');
+            const schoolId = teamSelect.value;
+            const teamName = teamSelect.options[teamSelect.selectedIndex].text;
+            const schoolName = document.getElementById('scoreSchoolDisplay').value;
+            const participantSelect = document.getElementById('scoreParticipantSelect');
+            const participantId = participantSelect.value;
+            const participantName = participantSelect.options[participantSelect.selectedIndex].text;
+            const competition = document.getElementById('scoreCompetitionDisplay').value;
+            const participantStd = document.getElementById('scoreStdDisplay').value;
+            const scoreTopic = document.getElementById('scoreTopic').value;
+            const scoreValue = document.getElementById('scoreValue').value;
+            let scoreType = '';
+
+            if (!schoolId) {
+                showMessage('Please select a team.', 'error');
+                return;
+            }
+
+            if (!participantId) {
+                showMessage('Please select a participant.', 'error');
+                return;
+            }
+
+            // Get score type for debate competition
+            if (competition === "POWER OF SPEECH-DEBATE") {
+                scoreType = document.getElementById('scoreType').value;
+                if (!scoreType) {
+                    showMessage('Please select a score type for debate competition.', 'error');
+                    return;
+                }
+            }
+
+            if (scoreValue < 0 || scoreValue > 100) {
+                showMessage('Score must be between 0 and 100.', 'error');
+                return;
+            }
+
+            const submissionDate = new Date().toLocaleDateString('en-GB');
+
+            const scoreData = {
+                schoolId: schoolId,
+                teamName: teamName,
+                schoolName: schoolName,
+                participantId: participantId,
+                participantName: participantName,
+                competition: competition,
+                participantStd: participantStd,
+                topic: scoreTopic,
+                score: parseInt(scoreValue),
+                submissionDate: submissionDate,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            // Add score type only for debate competition
+            if (competition === "POWER OF SPEECH-DEBATE") {
+                scoreData.scoreType = scoreType;
+            }
+
+            db.collection("scores").add(scoreData)
+            .then(() => {
+                showMessage('Score submitted successfully!', 'success');
+                document.getElementById('scoreRegistrationForm').reset();
+                // Reset the school display field
+                document.getElementById('scoreSchoolDisplay').value = '';
+                // Hide debate score options
+                document.getElementById('debateScoreOptions').style.display = 'none';
+                // Global listeners will update home page automatically
+            })
+            .catch((error) => {
+                console.error("Error adding score: ", error);
+                showMessage("Error submitting score. Please check Firebase permissions and try again.", 'error');
+            });
+        });
+
+        // UPDATED: Standard/Class options based on competition - FIXED VERSION
+        document.getElementById('competitionSelect').addEventListener('change', function () {
+            const competition = this.value;
+            const stdSelect = document.getElementById('participantStd');
+            stdSelect.innerHTML = '<option value="">-- Select a Class --</option>';
+
+            if (competition === "SOUND AND SENSE-POETRY RECITATION") {
+                stdSelect.innerHTML += `
+                    <option value="Class 1">Class 1</option>
+                    <option value="Class 2">Class 2</option>
+                `;
+            } else if (competition === "SPEAK TO LEAD-STORY TELLING") {
+                stdSelect.innerHTML += `
+                    <option value="Class 3">Class 3</option>
+                    <option value="Class 4">Class 4</option>
+                `;
+            } else if (competition === "HERE ME OUT!-ELOCUTION") {
+                stdSelect.innerHTML += `
+                    <option value="Class 5">Class 5</option>
+                    <option value="Class 6">Class 6</option>
+                `;
+            } else if (competition === "POWER OF SPEECH-DEBATE") {
+                stdSelect.innerHTML += `
+                    <option value="Class 7">Class 7</option>
+                    <option value="Class 8">Class 8</option>
+                `;
+            }
+        });
+
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function () {
+            showForm('homeForm', document.querySelector('.nav-links a'));
+            setupGlobalRealTimeListeners();
+            setupQuickStatsRealTimeListener();
+        });
+    </script>
+</body>
+
+</html>
