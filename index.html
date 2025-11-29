@@ -1266,12 +1266,11 @@
                                 <th>Competition <i class="fas fa-sort"></i></th>
                                 <th>Score <i class="fas fa-sort"></i></th>
                                 <th id="scoreTypeHeader" style="display:none;">Score Type <i class="fas fa-sort"></i></th>
-                                <th>Rank <i class="fas fa-sort"></i></th>
                             </tr>
                         </thead>
                         <tbody id="scoreTableBody">
                             <tr>
-                                <td colspan="5">Loading scores...</td>
+                                <td colspan="4">Loading scores...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -1918,10 +1917,6 @@
                 </div>
                 ` : ''}
                 <div class="detail-row">
-                    <span class="detail-label">Rank:</span>
-                    <span class="detail-value">${rank}</span>
-                </div>
-                <div class="detail-row">
                     <span class="detail-label">Award:</span>
                     <span class="detail-value">${award}</span>
                 </div>
@@ -1980,7 +1975,7 @@
                 scoreTypeHeader.style.display = 'none';
             }
 
-            scoreTableBody.innerHTML = '<tr><td colspan="5"><i class="fas fa-spinner fa-spin"></i> Loading scores...</td></tr>';
+            scoreTableBody.innerHTML = '<tr><td colspan="4"><i class="fas fa-spinner fa-spin"></i> Loading scores...</td></tr>';
 
             db.collection("scores").orderBy("score", "desc").get()
                 .then((snapshot) => {
@@ -2017,7 +2012,7 @@
 
                     scoreTableBody.innerHTML = '';
                     if (filteredData.length === 0) {
-                        scoreTableBody.innerHTML = '<tr><td colspan="5">No scores found for this round.</td></tr>';
+                        scoreTableBody.innerHTML = '<tr><td colspan="4">No scores found for this round.</td></tr>';
                         showPageMessage("No scores match the selected filters.", 'error');
                         return;
                     }
@@ -2033,14 +2028,12 @@
                                 <td>${item.competition || 'N/A'}</td>
                                 <td>${item.score || 'N/A'}</td>
                                 <td class="score-type">${scoreType}</td>
-                                <td>${item.rank}</td>
                             `;
                         } else {
                             row.innerHTML = `
                                 <td>${teamName}</td>
                                 <td>${item.competition || 'N/A'}</td>
                                 <td>${item.score || 'N/A'}</td>
-                                <td>${item.rank}</td>
                             `;
                         }
 
@@ -2054,7 +2047,7 @@
                 })
                 .catch((error) => {
                     console.error("Error loading scores: ", error);
-                    scoreTableBody.innerHTML = '<tr><td colspan="5">Error loading scores.</td></tr>';
+                    scoreTableBody.innerHTML = '<tr><td colspan="4">Error loading scores.</td></tr>';
                     showPageMessage("Error loading scores. Please try again later.", 'error');
                 });
         }
