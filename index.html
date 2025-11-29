@@ -1254,7 +1254,7 @@
                         <select id="standardFilter">
                             <option value="all">All Standards</option>
                         </select>
-                        <input type="text" id="searchFilter" placeholder="Search by student...">
+                        <input type="text" id="searchFilter" placeholder="Search by team...">
                     </div>
                 </div>
 
@@ -1264,7 +1264,7 @@
                             <tr>
                                 <th>Team Name <i class="fas fa-sort"></i></th>
                                 <th>Competition <i class="fas fa-sort"></i></th>
-                                <th>Score <i class="fas fa-sort"></i></th>
+                                <th>Team Score <i class="fas fa-sort"></i></th>
                                 <th id="scoreTypeHeader" style="display:none;">Score Type <i class="fas fa-sort"></i></th>
                             </tr>
                         </thead>
@@ -1295,7 +1295,7 @@
         <div class="details-modal-content">
             <span class="close-details-modal" id="closeDetailsModal">&times;</span>
             <div class="details-modal-header">
-                <h3>Participant Details</h3>
+                <h3>Team Details</h3>
             </div>
             <div class="details-grid" id="detailsGrid">
                 <!-- Details will be dynamically inserted here -->
@@ -1962,7 +1962,7 @@
                 });
         }
 
-        // Function to filter and display table data for current round
+        // Function to aggregate scores by team and display in table
         function updateTable() {
             const competition = getCompetitionForRound(currentRound);
             const standard = standardFilter.value;
@@ -1977,22 +1977,13 @@
 
             scoreTableBody.innerHTML = '<tr><td colspan="4"><i class="fas fa-spinner fa-spin"></i> Loading scores...</td></tr>';
 
-            db.collection("scores").orderBy("score", "desc").get()
+            db.collection("scores").get()
                 .then((snapshot) => {
                     let scoreData = [];
                     snapshot.forEach((doc) => {
                         const data = doc.data();
-                        console.log('Firestore Document:', data); // Log raw Firestore data
                         scoreData.push({ id: doc.id, ...data });
                     });
-
-                    console.log('Raw Score Data:', scoreData); // Log collected data
-
-                    // Assign ranks based on sorted scores
-                    scoreData = scoreData.map((item, index) => ({
-                        ...item,
-                        rank: index + 1
-                    }));
 
                     // Store current score data for real-time updates
                     currentScoreData = scoreData;
@@ -2002,44 +1993,72 @@
                         const matchesCompetition = item.competition === competition;
                         const matchesStandard = standard === 'all' || item.participantStd === standard;
                         const matchesSearch = search === '' ||
-                            (item.participantName && item.participantName.toLowerCase().includes(search)) ||
                             (item.teamName && item.teamName.toLowerCase().includes(search)) ||
                             (item.schoolName && item.schoolName.toLowerCase().includes(search));
                         return matchesCompetition && matchesStandard && matchesSearch;
                     });
 
-                    console.log('Filtered Data:', filteredData); // Log filtered data
+                    // Aggregate scores by team
+                    const teamScores = {};
+                    
+                    filteredData.forEach(item => {
+                        const teamName = item.teamName || item.participantName;
+                        if (!teamName) return;
+                        
+                        if (!teamScores[teamName]) {
+                            teamScores[teamName] = {
+                                teamName: teamName,
+                                competition: item.competition,
+                                totalScore: 0,
+                                participants: [],
+                                schools: []
+                            };
+                        }
+                        
+                        teamScores[teamName].totalScore += parseFloat(item.score) || 0;
+                        
+                        // Add participant if not already included
+                        if (item.participantName && !teamScores[teamName].participants.includes(item.participantName)) {
+                            teamScores[teamName].participants.push(item.participantName);
+                        }
+                        
+                        // Add school if not already included
+                        if (item.schoolName && !teamScores[teamName].schools.includes(item.schoolName)) {
+                            teamScores[teamName].schools.push(item.schoolName);
+                        }
+                    });
+                    
+                    // Convert to array and sort by total score
+                    const teamsArray = Object.values(teamScores);
+                    teamsArray.sort((a, b) => b.totalScore - a.totalScore);
 
                     scoreTableBody.innerHTML = '';
-                    if (filteredData.length === 0) {
+                    if (teamsArray.length === 0) {
                         scoreTableBody.innerHTML = '<tr><td colspan="4">No scores found for this round.</td></tr>';
                         showPageMessage("No scores match the selected filters.", 'error');
                         return;
                     }
 
-                    filteredData.forEach(item => {
-                        const teamName = item.teamName || item.participantName || 'N/A';
-                        const scoreType = item.scoreType || 'N/A';
-
+                    teamsArray.forEach(team => {
                         const row = document.createElement('tr');
                         if (currentRound === 4) {
                             row.innerHTML = `
-                                <td>${teamName}</td>
-                                <td>${item.competition || 'N/A'}</td>
-                                <td>${item.score || 'N/A'}</td>
-                                <td class="score-type">${scoreType}</td>
+                                <td>${team.teamName}</td>
+                                <td>${team.competition || 'N/A'}</td>
+                                <td>${team.totalScore.toFixed(2)}</td>
+                                <td class="score-type">Team Total</td>
                             `;
                         } else {
                             row.innerHTML = `
-                                <td>${teamName}</td>
-                                <td>${item.competition || 'N/A'}</td>
-                                <td>${item.score || 'N/A'}</td>
+                                <td>${team.teamName}</td>
+                                <td>${team.competition || 'N/A'}</td>
+                                <td>${team.totalScore.toFixed(2)}</td>
                             `;
                         }
 
-                        // Add click event to show details
+                        // Add click event to show team details
                         row.addEventListener('click', () => {
-                            showParticipantDetails(item);
+                            showTeamDetails(team);
                         });
 
                         scoreTableBody.appendChild(row);
@@ -2054,7 +2073,7 @@
 
         // Function to highlight score updates in real-time
         function highlightScoreUpdates() {
-            db.collection("scores").orderBy("score", "desc").get()
+            db.collection("scores").get()
                 .then((snapshot) => {
                     let newScoreData = [];
                     snapshot.forEach((doc) => {
