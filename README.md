@@ -4,7 +4,8 @@
 
 🚀 Live Demo
 
-🔗 Add your deployed project link here
+🔗 Add your deployed project link 
+https://lingua-fest-2-0-techtelligence.vercel.app/
 
 📌 Overview
 
