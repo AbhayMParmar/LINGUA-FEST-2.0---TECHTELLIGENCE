@@ -33,6 +33,7 @@ The platform enables administrators to efficiently input and update scores while
 🛠️ Admin Dashboard for easy control
 
 🧠 How It Works
+
 Admin logs into the dashboard
 Selects event category (Poetry, Debate, etc.)
 Inputs marks for each participant
