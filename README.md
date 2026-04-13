@@ -1,4 +1,4 @@
-#🎤 LINGUA-FEST 2.0 - TECHTELLIGENCE
+# 🎤 LINGUA-FEST 2.0 - TECHTELLIGENCE
 
 ✨ LINGUA-FEST 2.0 is a dynamic and responsive scoreboard web application designed specifically for managing school-level and interschool competitions. It provides real-time score updates, round-based evaluation, and an interactive leaderboard experience using modern web technologies and Firebase.
 
