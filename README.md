@@ -18,10 +18,13 @@ LINGUA-FEST 2.0 is built to simplify the process of managing competition scores 
 
 The platform enables administrators to efficiently input and update scores while instantly reflecting results on a live leaderboard for students and faculty.
 
-✨ Features
+# ✨ Features
+
 🔥 Real-time Score Updates using Firebase
+
 🏫 Interschool Competition Support
 📊 Round-based Scoring System
+
 📈 Dynamic Leaderboard (auto-updated)
 📱 Fully Responsive Design (mobile-friendly)
 🛠️ Admin Dashboard for easy control
